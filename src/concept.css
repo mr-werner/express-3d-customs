@@ -1,0 +1,51 @@
+/* Blueprint WebStudio concept widget + interest modal. Shared; colors come from the variables listed in README-BUILD.md. */
+/* ------------------------------------------------------------ Concept widget (Blueprint WebStudio) */
+.concept-widget { position: fixed; bottom: 12px; right: 12px; width: min(330px, calc(100vw - 24px)); z-index: 100; background: var(--deep); color: #fff; border: 1px solid var(--deep-line); box-shadow: 0 20px 65px rgba(0, 0, 0, .4); font-family: var(--body); }
+.concept-widget-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; color: var(--accent-soft); font-size: 9px; font-weight: 700; letter-spacing: .15em; }
+.concept-widget-head button { background: none; border: 0; color: var(--accent-soft); display: grid; place-items: center; padding: 4px; }
+.concept-widget-body { padding: 5px 14px 14px; }
+.concept-widget-body h2 { font-family: var(--head); font-size: 26px; font-weight: 800; line-height: 1.1; margin: 3px 0 14px; color: #fff; }
+.concept-widget-label { font-size: 11px; font-weight: 700; letter-spacing: .16em; color: var(--accent-soft); }
+.concept-widget-body p { color: var(--on-dark); font-size: 12px; margin: 7px 0 10px; }
+.concept-widget-timer { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; color: var(--on-dark); font-size: 12px; }
+.concept-widget-timer span { white-space: nowrap; }
+.concept-widget-timer strong { font-family: var(--head); font-size: 24px; color: #fff; font-weight: 700; }
+.concept-widget-cta { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; background: var(--accent); color: var(--accent-ink); padding: 12px; font-size: 14px; font-weight: 700; transition: background .2s; }
+.concept-widget-cta:hover { background: var(--accent-hover); }
+.concept-widget-links { display: flex; justify-content: center; gap: 13px; margin-top: 12px; font-size: 11px; color: var(--on-dark); }
+.concept-widget-links a + a:before { content: "·"; margin-right: 13px; color: var(--faint); }
+.concept-widget-links a:hover { color: #fff; }
+.concept-widget-footer { display: flex; justify-content: space-between; gap: 12px; align-items: center; border-top: 1px solid var(--line-light); padding: 9px 14px; font-size: 9px; color: var(--on-dark); }
+.concept-widget.is-collapsed .concept-widget-footer { display: none; }
+.concept-widget-brand { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: #fff; }
+.concept-widget-brand span:last-child { font-weight: 700; }
+.studio-logo-mask { display: inline-block; width: 27px; height: 27px; flex: 0 0 27px; background-color: currentColor; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain; }
+.footer-studio-brand { display: inline-flex; align-items: center; gap: 8px; color: var(--accent-soft); }
+.footer-studio-brand strong { color: #fff; font-size: 11px; }
+.footer-studio-brand:hover strong { color: var(--accent-soft); }
+.interest-backdrop { position: fixed; inset: 0; z-index: 200; background: rgba(0, 0, 0, .72); display: flex; justify-content: center; align-items: center; padding: 24px; }
+.interest-modal { position: relative; width: min(720px, 100%); max-height: min(90vh, 900px); overflow-y: auto; background: var(--paper); color: var(--ink); padding: clamp(26px, 5vw, 60px); box-shadow: 0 25px 85px rgba(0, 0, 0, .45); outline: none; }
+.interest-close { position: absolute; right: 17px; top: 17px; background: transparent; border: 0; color: var(--steel); padding: 6px; }
+.interest-kicker { display: block; color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .18em; padding-right: 32px; }
+.interest-modal h2 { font-size: clamp(34px, 5vw, 56px); line-height: 1; margin: 30px 0 18px; color: var(--steel); }
+.interest-intro { font-size: 15px; line-height: 1.75; color: var(--muted); margin-bottom: 26px; }
+.interest-form { display: grid; gap: 20px; }
+.interest-form label { display: grid; gap: 8px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--label); }
+.interest-form label span { color: #b42318; }
+.interest-form label small { color: var(--faint); font-size: 10px; }
+.interest-form input, .interest-form select, .interest-form textarea { width: 100%; min-height: 40px; background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 9px 3px; color: var(--ink); font: 400 15px var(--body); letter-spacing: normal; text-transform: none; }
+.interest-form textarea { resize: vertical; min-height: 90px; }
+.interest-form input:focus, .interest-form select:focus, .interest-form textarea:focus { outline: none; border-bottom-color: var(--steel); }
+.interest-honeypot { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.interest-submit { width: 100%; border: 0; background: var(--steel); color: #fff; font-weight: 700; padding: 17px; }
+.interest-submit:hover:not(:disabled) { background: var(--accent); }
+.interest-submit:disabled { opacity: .65; cursor: wait; }
+.interest-error { color: #b42318; font-size: 13px; margin: 0; }
+.interest-privacy { font-size: 11px; color: var(--muted); line-height: 1.6; margin: 0; }
+.interest-success svg { color: var(--accent); }
+.interest-success p { line-height: 1.7; color: var(--muted); margin-bottom: 25px; }
+.interest-modal h2 em { color: var(--accent); }
+@media (max-width: 640px) {
+  .interest-backdrop { padding: 10px; }
+  .interest-modal { max-height: 95vh; padding: 35px 22px; }
+}

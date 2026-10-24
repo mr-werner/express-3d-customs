@@ -1,0 +1,144 @@
+<section class="section" id="designer-app" aria-labelledby="designer-title">
+      
+      <div class="configurator">
+        <form class="controls-panel" id="quoteForm" novalidate>
+          <div class="panel-header"><h3>Dimensions</h3><p>Dimensions should match your existing chime backplate exactly. Round up to the nearest 1/16th&quot; if necessary.</p></div>
+          <div class="config-step-card">
+          <div class="config-step-heading"><span>1</span><strong>Cover dimensions</strong></div>
+          <div class="dimension-entry">
+            <div class="unit-column dimension-card" aria-label="Cover dimensions">
+              <div class="dimension-card-header">
+                <h4>Dimensions</h4>
+                <label class="unit-toggle">Input unit<select id="dimensionUnit"><option value="in">Inches</option><option value="cm">Centimeters</option><option value="mm">Millimeters</option></select></label>
+              </div>
+              <div class="dimensions-grid compact-unit-grid">
+                <label>Height <span class="e3d-input-unit-wrap"><input type="number" id="heightInInput" min="0.1" max="1016" step="0.125" value="4.75" required><span class="unit-inside" data-unit-label>in</span></span></label><label>Width <span class="e3d-input-unit-wrap"><input type="number" id="widthInInput" min="0.1" max="1016" step="0.125" value="6.75" required><span class="unit-inside" data-unit-label>in</span></span></label><label>Depth <span class="e3d-input-unit-wrap"><input type="number" id="depthInInput" min="0.1" max="1016" step="0.125" value="2" required><span class="unit-inside" data-unit-label>in</span></span></label>
+              </div>
+              <input type="hidden" id="heightMmInput" value="120.7"><input type="hidden" id="widthMmInput" value="171.5"><input type="hidden" id="depthMmInput" value="50.8">
+              <div class="conversion-readouts" aria-live="polite">
+                <div><strong>Inches</strong><span id="inchesReadout">4.75 H x 6.75 W x 2 D</span></div>
+                <div><strong>Millimeters</strong><span id="millimetersReadout">120.7 H x 171.5 W x 50.8 D</span></div>
+                <div><strong>Centimeters</strong><span id="centimetersReadout">12.07 H x 17.15 W x 5.08 D</span></div>
+              </div>
+            </div>
+          </div>
+          <p class="dimension-note">Any dimension 10 in or larger adds a $10 oversized fee and $5 additional shipping. Maximum dimension is 16 in.</p>
+          <div class="oversize-warning" id="oversizeWarning" hidden></div>
+          <p class="field-error" id="dimensionError" role="alert"></p>
+          </div>
+
+          <div class="config-step-card">
+          <div class="config-step-heading"><span>2</span><strong>Pattern</strong></div>
+          <div class="pattern-grid">
+            <label>Front pattern<select id="frontPattern"></select></label>
+            <label>Side pattern<select id="sidePattern"></select></label>
+          </div>
+          <div class="side-pattern-card" id="sidePatternControls">
+            <div class="side-layout-header">
+              <div>
+                <h4>Side cutout layout</h4>
+                <p>Fine-tune the side cutout pattern for each side wall.</p>
+              </div>
+            </div>
+            <div class="side-pattern-grid side-layout-shell">
+              <div class="side-layout-block side-layout-block-count">
+                <div class="side-layout-meta">
+                  <span class="side-layout-icon" aria-hidden="true">◎</span>
+                  <div>
+                    <span class="side-layout-label">Shapes per side</span>
+                    <small>Choose how many cutouts appear on each side.</small>
+                  </div>
+                </div>
+                <div class="side-count-options" role="radiogroup" aria-label="Shapes per side">
+                  <label><input type="radio" name="sideShapeCount" value="1"><span class="side-radio-dot" aria-hidden="true"></span><span class="side-radio-text">1</span></label>
+                  <label><input type="radio" name="sideShapeCount" value="3"><span class="side-radio-dot" aria-hidden="true"></span><span class="side-radio-text">3</span></label>
+                  <label><input type="radio" name="sideShapeCount" value="5" checked><span class="side-radio-dot" aria-hidden="true"></span><span class="side-radio-text">5</span></label>
+                </div>
+              </div>
+              <label class="side-layout-block side-layout-input-block">
+                <span class="side-layout-meta">
+                  <span class="side-layout-icon" aria-hidden="true">◇</span>
+                  <span>
+                    <span class="side-layout-label">Shape size</span>
+                    <small>Allowed range: 10–40 mm</small>
+                  </span>
+                </span>
+                <span class="e3d-input-unit-wrap compact-mm-wrap"><input type="number" id="sideShapeSizeInput" min="10" max="40" step="0.5" value="30"><span class="unit-inside">mm</span></span>
+              </label>
+              <label class="side-layout-block side-layout-input-block">
+                <span class="side-layout-meta">
+                  <span class="side-layout-icon" aria-hidden="true">↔</span>
+                  <span>
+                    <span class="side-layout-label">Space between cutouts</span>
+                    <small>Minimum open gap: 10 mm</small>
+                  </span>
+                </span>
+                <span class="e3d-input-unit-wrap compact-mm-wrap"><input type="number" id="sideShapeSpacingInput" min="0" max="160" step="0.5" value="10"><span class="unit-inside">mm</span></span>
+              </label>
+            </div>
+            <div class="side-layout-edge-note">Cutouts stay at least 5mm from the top and bottom edges.</div>
+            <p class="field-error" id="sidePatternError" role="alert"></p>
+          </div>
+          </div>
+
+          <div class="config-step-card">
+          <div class="config-step-heading"><span>3</span><strong>Color</strong></div>
+          <div class="color-grid">
+            <div class="field-group color-picker-group">
+              <label for="faceColorSelect" id="faceColorLabelText">Face color</label>
+              <select id="faceColorSelect"></select>
+              <div class="swatches" id="faceColorSwatches" aria-label="Quick cover color choices"></div>
+              <div class="custom-color-row" id="faceCustomColorRow" hidden><label for="faceCustomColorInput">Custom cover color</label><input type="color" id="faceCustomColorInput" value="#e9e7df" aria-label="Choose custom cover color"></div>
+            </div>
+            <div class="field-group color-picker-group" id="wallColorGroup">
+              <label for="wallColorSelect" id="wallColorLabelText">Wall color</label>
+              <select id="wallColorSelect"></select>
+              <div class="swatches" id="wallColorSwatches" aria-label="Quick wall color choices"></div>
+            </div>
+          </div>
+          <div class="color-mode-card" id="colorModeNote">When the wall color is different from the face color, the two-tone fee is included automatically.</div>
+          </div>
+
+          <div class="config-step-card">
+          <div class="config-step-heading optional-step-heading"><span>4</span><strong>Fit details</strong></div>
+          <div class="bell-section">
+            <div class="unit-column">
+              <div class="dimension-card-header bell-toggle-header">
+                <label class="bell-enable-toggle"><input type="checkbox" id="bellCutoutEnabled"> <span>Bell clearance cutout</span></label>
+              </div>
+              <div id="bellCutoutBody" hidden>
+                <div class="dimension-card-header bell-body-header">
+                  <div class="bell-help-card" aria-label="Bell clearance cutout notes">
+                    <strong>For bells that extend below the back plate.</strong>
+                  </div>
+                  <label class="unit-toggle">Input unit<select id="bellUnitSelect"><option value="in">Inches</option><option value="mm">Millimeters</option></select></label>
+                </div>
+                <div class="dimensions-grid bell-grid">
+                  <div class="field-group bell-count-group"><span>Number of bells</span><div class="bell-count-options" id="bellCountSelect" role="radiogroup" aria-label="Number of bells"><label><input type="radio" name="bellCount" value="1" checked><span></span>1</label><label><input type="radio" name="bellCount" value="2"><span></span>2</label><label><input type="radio" name="bellCount" value="3"><span></span>3</label></div></div>
+                  <label><span class="label-with-help">Bell diameter <button class="help-icon" type="button" data-help-image="/designer/assets/bell-diameter.jpg" data-help-title="Bell Diameter" aria-label="Show example image for bell diameter">?</button></span><span class="e3d-input-unit-wrap"><input type="number" id="bellDepthInInput" min="0" max="12" step="0.125" placeholder=""><span class="unit-inside" data-bell-unit-label>in</span></span></label>
+                  <label><span class="label-with-help">Bell face from wall <button class="help-icon" type="button" data-help-image="/designer/assets/bell-height-from-wall.jpg" data-help-title="Bell Face From Wall" aria-label="Show example image for bell face from wall">?</button></span><span class="e3d-input-unit-wrap"><input type="number" id="bellProjectionInInput" min="0" max="12" step="0.125" placeholder=""><span class="unit-inside" data-bell-unit-label>in</span></span></label>
+                  <label id="bellSpacingField"><span class="label-with-help">Space between bells <button class="help-icon" type="button" data-help-image="/designer/assets/space-between-bells.jpg" data-help-title="Space Between Bells" aria-label="Show example image for space between bells">?</button></span><span class="e3d-input-unit-wrap"><input type="number" id="bellSpacingInInput" min="0" max="12" step="0.125" placeholder="" value="0"><span class="unit-inside" data-bell-unit-label>in</span></span></label>
+                </div>
+              </div>
+              <input type="hidden" id="bellDepthMmInput"><input type="hidden" id="bellProjectionMmInput"><input type="hidden" id="bellSpacingMmInput" value="0">
+              <div class="bell-merge-notice" id="bellMergeNotice" hidden></div>
+              <div class="bell-readout"><strong>Cutout size</strong><small id="bellCutoutReadout">No bell cutout</small></div>
+              <p class="field-error" id="bellError" role="alert"></p>
+            </div>
+          </div>
+          </div>
+          <label>Customer notes<textarea id="notesInput" rows="5" placeholder="Tell us about special fit needs, wall clearance, existing cover shape, or preferred finish."></textarea></label>
+          <button class="submit-button" type="submit">Add to Cart</button><p class="form-note">Your custom dimensions, patterns, colors, and bell clearance details will be saved with your order. <em class="concept-cart-note">In this preview, Add to Cart shows your design summary; on the live site it adds the cover to the cart just like today.</em></p>
+        </form>
+        <aside class="preview-panel" aria-label="Live 3D preview"><div class="preview-toolbar"><div><h3>Live 3D preview</h3></div><div class="preview-status-stack"><div class="dimension-info-card"><span>Dimensions</span><strong id="previewCaption">6.75&quot; W x 4.75&quot; H x 2&quot; D / 171.5 x 120.7 x 50.8 mm</strong></div><div class="preview-patterns"><span id="frontLabel">Front: Arches</span><span id="sideLabel">Sides: Blank</span></div></div><div class="price-card" aria-live="polite"><span>Estimated price</span><strong id="priceTotal">$0.00</strong><p id="priceMessage">Enter dimensions to calculate price.</p><div class="price-breakdown" id="priceBreakdown"></div></div></div><div class="canvas-wrap"><canvas id="coverPreview"></canvas><div class="view-presets" aria-label="View presets"><button type="button" data-view-preset="front">Front</button><button type="button" data-view-preset="side">Side</button><button type="button" data-view-preset="bottom">Bottom</button><button type="button" data-view-preset="inside">Inside</button></div></div><div class="preview-meta"><div class="viewer-help-strip"><strong>View controls</strong><span>Left click + drag to rotate</span><span>Right click + drag to pan</span><span>Scroll to zoom</span></div><div class="light-block"><label class="light-control">Source brightness <input type="range" id="lightBrightness" min="30" max="170" value="100" step="5"><span id="lightBrightnessValue">100%</span></label><p class="render-note">Color and sheen are best estimates from the 3D render and may vary in printed parts.</p></div><div class="preview-actions"><label class="toggle-control"><input type="checkbox" id="dimensionToggle"  checked='checked'> Dimension labels</label><label class="toggle-control auto-view-control"><input type="checkbox" id="autoViewToggle"  checked='checked'> Auto view assist</label><button class="ghost-button" id="standardResetButton" type="button">Standard cover</button><button class="ghost-button" id="copyConfigButton" type="button">Copy design</button><button class="ghost-button" id="resetCameraButton" type="button">Reset View</button></div></div></aside>
+      </div>
+      <div class="summary-card" id="summaryCard" aria-live="polite" hidden><h3>Request summary</h3><div id="summaryContent"></div></div>
+    </section>
+<div class="measurement-modal" id="measurementHelpModal" hidden>
+    <div class="measurement-modal-backdrop" data-close-measurement-help></div>
+    <div class="measurement-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="measurementHelpTitle">
+      <button class="measurement-modal-close" type="button" data-close-measurement-help aria-label="Close measurement example">×</button>
+      <h3 id="measurementHelpTitle">Measurement example</h3>
+      <img decoding="async" id="measurementHelpImage" src="" alt="Measurement example">
+    </div>
+  </div>
