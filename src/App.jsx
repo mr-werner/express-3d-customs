@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ArrowRight, ArrowUpRight, Box, Check, ChevronDown, Layers, Menu, Palette, Ruler, ShoppingBag, Sparkles, Star, X } from "lucide-react";
 import Designer, { applyToDesigner } from "./Designer.jsx";
-import { ConceptWidget, StudioCredit } from "./concept.jsx";
+import { CLIENT_PORTAL, ConceptWidget, StudioCredit } from "./concept.jsx";
 import wordmark from "./assets/e3c-wordmark.jpg";
 import crest from "./assets/e3c-crest.jpg";
 import lifestyle from "./assets/shop/chime-lifestyle.jpg";
@@ -497,6 +497,7 @@ function Footer() {
       </div>
       <div className="wrap footer-bottom">
         <span>© {new Date().getFullYear()} {COMPANY}. Preview build for client review.</span>
+        <a className="footer-portal" href={CLIENT_PORTAL} target="_blank" rel="noopener noreferrer">Client sign in</a>
         <StudioCredit />
       </div>
     </footer>

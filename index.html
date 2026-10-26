@@ -12,5 +12,14 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Page view for the client's portal stats (no cookies; see blueprint-digital api/track.js)
+      try {
+        navigator.sendBeacon(
+          "https://www.blueprintwebstudio.com/api/track",
+          JSON.stringify({ path: location.pathname, referrer: document.referrer })
+        );
+      } catch (error) {}
+    </script>
   </body>
 </html>

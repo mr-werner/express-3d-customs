@@ -8,6 +8,7 @@ import { ArrowUpRight, CheckCircle2, Minus, Plus, X } from "lucide-react";
 export const STUDIO_PHONE = "+17205156647";
 export const STUDIO_EMAIL = "hello@blueprintwebstudio.com";
 export const STUDIO_WEBSITE = "https://blueprintwebstudio.com";
+export const CLIENT_PORTAL = "https://www.blueprintwebstudio.com/portal";
 
 let COMPANY = "";
 let STUDIO_SOURCE = "";
@@ -136,6 +137,7 @@ export function ConceptWidget({ company, abbr }) {
               {STUDIO_PHONE && <a href={`tel:${STUDIO_PHONE}`}>Call</a>}
               <a href={`mailto:${STUDIO_EMAIL}`}>Email</a>
               <a href={STUDIO_WEBSITE} target="_blank" rel="noopener noreferrer">Website</a>
+              <a href={CLIENT_PORTAL} target="_blank" rel="noopener noreferrer">Client sign in</a>
             </div>
           </div>
         )}

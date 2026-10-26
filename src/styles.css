@@ -315,3 +315,4 @@ p { margin: 0 0 1em; }
   .designer-section .e3d-chime-configurator .configurator { display: flex; flex-direction: column; }
   .designer-section .e3d-chime-configurator .preview-panel { order: -1; position: static !important; max-height: none; }
 }
+.footer-bottom .footer-portal { margin-left: auto; font-weight: 600; }
