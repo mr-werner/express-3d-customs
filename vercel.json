@@ -15,6 +15,10 @@
     {
       "source": "/api/site-content",
       "destination": "https://www.blueprintwebstudio.com/api/site-editor?site=e3d.blueprintwebstudio.com"
+    },
+    {
+      "source": "/((?!api/|assets/|designer/).*)",
+      "destination": "/index.html"
     }
   ]
 }
