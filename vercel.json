@@ -3,7 +3,18 @@
   "headers": [
     {
       "source": "/(.*)",
-      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/site-content",
+      "destination": "https://www.blueprintwebstudio.com/api/site-editor?site=e3d.blueprintwebstudio.com"
     }
   ]
 }
