@@ -28,6 +28,21 @@
   --section-pad: 110px;
   --footer-logo-w: 240px;
 
+  /* Colors and fonts for sections added in the editor (sections.css) */
+  --bws-accent: var(--red);
+  --bws-accent-ink: #fff;
+  --bws-dark: var(--char-2);
+  --bws-on-dark: var(--cream-2);
+  --bws-on-dark-2: #c9c2b5;
+  --bws-light: var(--cream-2);
+  --bws-page: var(--paper);
+  --bws-card: #fff;
+  --bws-text: var(--text);
+  --bws-muted: var(--text-2);
+  --bws-line: var(--line);
+  --bws-radius: var(--r);
+  --bws-head-font: var(--head);
+
   /* Variables the shared Blueprint WebStudio widget reads. */
   --ink: var(--char);
   --accent: var(--red);
@@ -100,7 +115,7 @@ p { margin: 0 0 1em; }
 .hero h1 .hl { color: var(--cream); display: block; margin-top: 8px; background: linear-gradient(transparent 62%, color-mix(in srgb, var(--red) 55%, transparent) 62%, color-mix(in srgb, var(--red) 55%, transparent) 88%, transparent 88%); background-size: 100% 1.04em; }
 .lede { font-size: 19px; color: #d6cfc2; max-width: 560px; margin: 26px 0 32px; }
 .hero-ctas { display: flex; flex-wrap: wrap; gap: 14px; }
-.hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 46px 0 0; border-top: 1px solid var(--line-dark); }
+.hero-stats { display: grid; grid-template-columns: repeat(var(--stats, 4), 1fr); gap: 0; margin: 46px 0 0; border-top: 1px solid var(--line-dark); }
 .hero-stats div { padding: 18px 14px 0 0; }
 .hero-stats div + div { padding-left: 16px; border-left: 1px solid var(--line-dark); }
 .hero-stats dt { font-family: var(--head); font-weight: 700; font-size: 28px; color: var(--cream); display: flex; align-items: center; gap: 6px; }
@@ -162,6 +177,7 @@ p { margin: 0 0 1em; }
 
 .colors { background: var(--cream-2); border-top: 1px solid var(--line); }
 .colors-grid { display: grid; grid-template-columns: 1fr 1.05fr .9fr; gap: 46px; align-items: center; }
+.colors-grid.no-photo { grid-template-columns: 1fr 1.2fr; }
 .colors-grid p { color: var(--text-2); }
 .muted-note { display: flex; align-items: center; gap: 10px; font-size: 15px; }
 .premium-dot { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--cream); color: var(--char); font-weight: 900; font-size: 12px; }
@@ -224,6 +240,7 @@ p { margin: 0 0 1em; }
 
 .about { background: var(--paper); }
 .about-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 70px; align-items: center; }
+.about-grid.no-photo { grid-template-columns: minmax(0, 820px); }
 .about-photo { position: relative; margin: 0 0 40px; }
 .about-photo > img:first-child { border-radius: 18px; box-shadow: 0 24px 50px rgba(40, 48, 51, .22); }
 .about-crest { position: absolute; right: -24px; bottom: -40px; width: 58%; border-radius: 14px; border: 4px solid var(--paper); box-shadow: 0 18px 36px rgba(0, 0, 0, .3); }
@@ -325,3 +342,7 @@ p { margin: 0 0 1em; }
   .designer-section .e3d-chime-configurator .preview-panel { order: -1; position: static !important; max-height: none; }
 }
 .footer-bottom .footer-portal { margin-left: auto; font-weight: 600; }
+
+/* Sections added in the editor, and the empty-page note shown in the editor */
+.bws-on-dark .eyebrow.dark { color: var(--cream); }
+.empty-page p { color: var(--text-2); text-align: center; }

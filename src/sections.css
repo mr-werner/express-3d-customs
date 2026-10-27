@@ -1,0 +1,77 @@
+/* Blueprint WebStudio section library (sections.jsx). Same file in every editable site;
+   each site maps its own colors and fonts onto these variables in its stylesheet. */
+.bws-section {
+  --bws-fg: var(--bws-text);
+  --bws-fg-2: var(--bws-muted);
+  position: relative;
+  padding: var(--bws-space, 100px) 0;
+  background: var(--bws-page);
+  color: var(--bws-fg);
+  background-size: cover;
+  background-position: center;
+}
+.bws-bg-light { background: var(--bws-light); }
+.bws-bg-dark { background: var(--bws-dark); }
+.bws-bg-accent { background: var(--bws-accent); }
+.bws-bg-image { background-color: var(--bws-dark); }
+.bws-on-dark { --bws-fg: var(--bws-on-dark); --bws-fg-2: var(--bws-on-dark-2); }
+.bws-bg-accent { --bws-fg: var(--bws-accent-ink); --bws-fg-2: var(--bws-accent-ink); }
+
+.bws-section h2 { color: var(--bws-fg); margin: 0 0 18px; }
+.bws-section h3 { color: var(--bws-fg); margin: 0 0 6px; }
+.bws-body { color: var(--bws-fg-2); font-size: 1.06em; }
+.bws-body p { margin: 0 0 1em; }
+.bws-body p:last-child { margin-bottom: 0; }
+.bws-intro { max-width: 720px; margin-bottom: 34px; }
+.bws-narrow { max-width: 780px; }
+.bws-align-center .bws-narrow, .bws-align-center .bws-intro { margin-left: auto; margin-right: auto; }
+.bws-align-center { text-align: center; }
+.bws-buttons { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 28px; }
+.bws-align-center .bws-buttons { justify-content: center; }
+
+.bws-split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; text-align: left; }
+.bws-split.is-flipped > figure { order: -1; }
+.bws-split.no-photo { grid-template-columns: 1fr; max-width: 760px; margin: 0 auto; }
+.bws-photo { margin: 0; border-radius: var(--bws-radius); overflow: hidden; aspect-ratio: 4 / 3; background: var(--bws-line); }
+.bws-photo img { width: 100%; height: 100%; object-fit: cover; }
+.bws-photo-empty { display: grid; place-items: center; width: 100%; height: 100%; min-height: 140px; color: var(--bws-fg-2); font-size: 14px; border: 2px dashed var(--bws-line); border-radius: var(--bws-radius); }
+
+.bws-gallery { display: grid; grid-template-columns: repeat(var(--bws-cols, 3), 1fr); gap: 16px; margin-top: 30px; text-align: left; }
+.bws-gallery figure { margin: 0; }
+.bws-gallery img, .bws-gallery .bws-photo-empty { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--bws-radius); }
+.bws-gallery figcaption { margin-top: 8px; font-size: 14px; color: var(--bws-fg-2); }
+
+.bws-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; text-align: left; }
+.bws-card { display: block; overflow: hidden; border: 1px solid var(--bws-line); border-radius: var(--bws-radius); background: var(--bws-card); color: var(--bws-text); text-decoration: none; transition: transform .18s, box-shadow .18s; }
+a.bws-card:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(0, 0, 0, .14); }
+.bws-card img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
+.bws-card > div { padding: 18px 18px 22px; }
+.bws-card h3 { color: var(--bws-text); }
+.bws-card p { margin: 0; color: var(--bws-muted); font-size: 15px; }
+
+.bws-banner-inner { display: flex; justify-content: space-between; align-items: center; gap: 30px; text-align: left; }
+.bws-align-center .bws-banner-inner { flex-direction: column; text-align: center; }
+.bws-banner-inner h2 { margin: 0; }
+.bws-banner-inner .bws-body { margin-top: 10px; }
+
+.bws-faq-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 60px; text-align: left; }
+.bws-faq details { border-bottom: 1px solid var(--bws-line); }
+.bws-faq summary { list-style: none; padding: 18px 0; font-family: var(--bws-head-font); font-weight: 600; font-size: 19px; cursor: pointer; color: var(--bws-fg); }
+.bws-faq summary::-webkit-details-marker { display: none; }
+.bws-faq summary::after { content: "+"; float: right; color: var(--bws-accent); }
+.bws-faq details[open] summary::after { content: "–"; }
+.bws-faq p { margin: 0 0 16px; color: var(--bws-fg-2); }
+
+.bws-contact { display: grid; gap: 14px; margin: 26px 0 0; }
+.bws-align-center .bws-contact { justify-items: center; }
+.bws-contact dt { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--bws-fg-2); }
+.bws-contact dd { margin: 2px 0 0; font-size: 19px; white-space: pre-line; }
+.bws-contact a { color: inherit; }
+
+@media (max-width: 860px) {
+  .bws-split, .bws-faq-grid { grid-template-columns: 1fr; gap: 32px; }
+  .bws-split.is-flipped > figure { order: 0; }
+  .bws-gallery { grid-template-columns: repeat(2, 1fr); }
+  .bws-banner-inner { flex-direction: column; align-items: flex-start; }
+  .bws-section { padding: calc(var(--bws-space, 100px) * .7) 0; }
+}
