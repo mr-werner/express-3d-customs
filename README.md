@@ -74,3 +74,14 @@ The "Send Feedback" card posts to `api/demo-interest.js`, which proxies to the m
 - **About copy:** written from the Etsy "About" section (started with a single 3D printer, made a chime cover after finding none on the market). Confirm the wording.
 - **Size table:** the example sizes are from the Etsy order-instructions image. The designer prices by volume with its own formula, so the table is a guide only.
 - **Photos:** all product photos are from their Etsy listings and shop page; host copies are bundled in `src/assets/shop/`.
+
+## WordPress theme (`wordpress/`)
+
+`wordpress/express-3d-customs/` is the same site as a WordPress block theme, so the client can keep editing in WordPress. `wordpress/express-3d-customs.zip` is the installable file (Appearance > Themes > Add New Theme > Upload Theme). See `wordpress/express-3d-customs/readme.txt` for install and editing notes.
+
+- Every home page section is an editable block pattern (`patterns/`); `templates/front-page.html` puts them in order.
+- `[e3d_designer]` embeds the client's `e3d-chime-configurator` plugin: it tries the plugin's shortcode, then falls back to the content of the `/custom-door-chime-cover-designer/` page.
+- The plugin's global CSS is swapped for `assets/css/designer-plugin-scoped.css` (same rules, scoped to `.e3d-chime-configurator`).
+- Sends the Blueprint WebStudio portal visit beacon (off for logged-in users; `e3d_portal_tracking` filter).
+
+Rebuild the zip after changes: `cd wordpress && rm -f express-3d-customs.zip && zip -qr -X express-3d-customs.zip express-3d-customs`.
