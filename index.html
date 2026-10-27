@@ -11,6 +11,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Start fetching the client's published edits before the app bundle loads (see src/editable.jsx)
+      if (!/[?&]bws-edit=/.test(location.search)) {
+        window.__BWS_CONTENT__ = fetch("/api/site-content")
+          .then(function (response) { return response.ok ? response.json() : null; })
+          .catch(function () { return null; });
+      }
+    </script>
     <script type="module" src="/src/main.jsx"></script>
     <script>
       // Page view for the client's portal stats (no cookies; see blueprint-digital api/track.js)
