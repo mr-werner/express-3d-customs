@@ -122,8 +122,8 @@ export function ConceptWidget({ company, abbr }) {
   const [minimized, setMinimized] = useState(false);
   const [draft, setDraft] = useState(readDraft);
   const updateDraft = useCallback((value) => { setDraft(value); saveDraft(value); }, []);
-  // On phones the preview card folds away so the notes and the page both fit
-  const openForm = () => { setShowForm(true); setMinimized(false); if (window.innerWidth < 640) setCollapsed(true); };
+  // The preview card folds away while notes are open, so the notes and the page both have room
+  const openForm = () => { setShowForm(true); setMinimized(false); setCollapsed(true); };
 
   // Tuck the card away once the visitor scrolls into the designer so it doesn't cover the price.
   useEffect(() => {
