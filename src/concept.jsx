@@ -3,7 +3,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUpRight, CheckCircle2, Minus, Plus, X } from "lucide-react";
 
 // Blueprint WebStudio client-preview card + feedback form. Express 3D Customs asked for this redesign,
-// so there's no offer countdown; the form sends their feedback to Justin.
+// so there's no offer countdown; the form sends their feedback to Justin. Only access-code holders reach
+// this page, so it asks for notes only (the proxy in api/demo-interest.js fills in who it's from).
 
 export const STUDIO_PHONE = "+17205156647";
 export const STUDIO_EMAIL = "hello@blueprintwebstudio.com";
@@ -14,7 +15,7 @@ let COMPANY = "";
 let STUDIO_SOURCE = "";
 
 function FeedbackModal({ onClose }) {
-  const [form, setForm] = useState({ name: "", email: "", phone: "", message: "", website: "" });
+  const [form, setForm] = useState({ message: "", website: "" });
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const modalRef = useRef(null);
@@ -50,9 +51,6 @@ function FeedbackModal({ onClose }) {
           source: STUDIO_SOURCE,
           page: window.location.href,
           action: "Client Feedback",
-          name: form.name.trim(),
-          email: form.email.trim(),
-          phone: form.phone.trim(),
           budget: "Existing client",
           message: form.message.trim(),
         }),
@@ -83,9 +81,6 @@ function FeedbackModal({ onClose }) {
             <h2 id="interest-title">What should change?</h2>
             <p className="interest-intro">Point out anything to fix, add or reword: copy, photos, prices, the designer, colors. It all goes to Justin.</p>
             <form onSubmit={submit} className="interest-form">
-              <label>Name <span>*</span><input value={form.name} onChange={(e) => update("name", e.target.value)} required maxLength={120} autoComplete="name" /></label>
-              <label>Email <span>*</span><input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} required maxLength={254} autoComplete="email" /></label>
-              <label>Phone<input type="tel" value={form.phone} onChange={(e) => update("phone", e.target.value)} maxLength={40} autoComplete="tel" /></label>
               <label>Your notes <span>*</span><textarea value={form.message} onChange={(e) => update("message", e.target.value)} required maxLength={3000} rows={5} placeholder="e.g. Swap the hero photo, add the felt insert option, change the FAQ wording..." /></label>
               <div className="interest-honeypot" aria-hidden="true"><label>Website<input type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={(e) => update("website", e.target.value)} /></label></div>
               {error && <p className="interest-error" role="alert">{error}</p>}
