@@ -1,6 +1,7 @@
 /* Blueprint WebStudio concept widget + interest modal. Shared; colors come from the variables listed in README-BUILD.md. */
 /* ------------------------------------------------------------ Concept widget (Blueprint WebStudio) */
-.concept-widget { position: fixed; bottom: 12px; right: 12px; width: min(330px, calc(100vw - 24px)); z-index: 100; background: var(--deep); color: #fff; border: 1px solid var(--deep-line); box-shadow: 0 20px 65px rgba(0, 0, 0, .4); font-family: var(--body); }
+.concept-dock { position: fixed; bottom: 12px; right: 12px; width: min(330px, calc(100vw - 24px)); z-index: 100; display: flex; flex-direction: column; gap: 8px; max-height: calc(100vh - 24px); }
+.concept-widget { position: relative; flex: 0 0 auto; background: var(--deep); color: #fff; border: 1px solid var(--deep-line); box-shadow: 0 20px 65px rgba(0, 0, 0, .4); font-family: var(--body); }
 .concept-widget-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; color: var(--accent-soft); font-size: 9px; font-weight: 700; letter-spacing: .15em; }
 .concept-widget-head button { background: none; border: 0; color: var(--accent-soft); display: grid; place-items: center; padding: 4px; }
 .concept-widget-body { padding: 5px 14px 14px; }
@@ -49,3 +50,25 @@
   .interest-backdrop { padding: 10px; }
   .interest-modal { max-height: 95vh; padding: 35px 22px; }
 }
+
+/* Notes panel, docked above the preview card so the site stays usable */
+.feedback-panel { display: flex; flex-direction: column; min-height: 0; background: var(--paper); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 20px 65px rgba(0, 0, 0, .35); font-family: var(--body); }
+.feedback-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 6px 6px 14px; border-bottom: 1px solid var(--line); }
+.feedback-panel.is-minimized .feedback-panel-head { border-bottom: 0; }
+.feedback-panel-title { flex: 1; text-align: left; background: none; border: 0; padding: 6px 0; color: var(--steel); font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.feedback-panel-saved { color: var(--accent); letter-spacing: .06em; }
+.feedback-panel-actions { display: flex; }
+.feedback-panel-actions button { background: none; border: 0; color: var(--steel); display: grid; place-items: center; padding: 6px; }
+.feedback-panel-actions button:hover { color: var(--accent); }
+.feedback-panel-body { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; min-height: 0; overflow-y: auto; }
+.feedback-panel-hint { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.feedback-panel textarea { width: 100%; min-height: 120px; max-height: 40vh; resize: vertical; background: #fff; border: 1px solid var(--line); padding: 10px; color: var(--ink); font: 400 14px/1.5 var(--body); }
+.feedback-panel textarea:focus { outline: none; border-color: var(--steel); }
+.feedback-panel-send { width: 100%; border: 0; background: var(--steel); color: #fff; font-weight: 700; font-size: 14px; padding: 12px; }
+.feedback-panel-send:hover:not(:disabled) { background: var(--accent); }
+.feedback-panel-send:disabled { opacity: .55; cursor: not-allowed; }
+.feedback-panel-privacy { margin: 0; font-size: 11px; color: var(--muted); }
+.feedback-panel-sent { align-items: flex-start; }
+.feedback-panel-sent svg { color: var(--accent); }
+.feedback-panel-sent p { margin: 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.feedback-panel-sent strong { color: var(--ink); }
