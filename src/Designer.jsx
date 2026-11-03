@@ -1,9 +1,11 @@
-import React, { memo, useEffect } from "react";
+import React, { memo, useEffect, useRef } from "react";
 import markup from "./designer-markup.html?raw";
 import "./designer-plugin.css";
 
-// The live 3D cover designer from express3dcustoms.com (their own e3d-chime-configurator plugin, v1.0.25).
-// The plugin's script, pattern data and Three.js files are served unchanged from public/designer/.
+// The 3D cover designer: script.js is the shop's own new Chime Cover Builder (desktop app, Nov 2026),
+// with the pattern data and Three.js files served unchanged from public/designer/. config.js keeps the
+// live site's pricing and colors. Wall and face thickness stay at the shop's standard 2 mm (hidden inputs),
+// and the builder's production-only 3MF export is left out of this customer-facing page.
 const SCRIPTS = [
   "config.js",
   "vendor/three.min.js",
@@ -23,6 +25,7 @@ const SCRIPTS = [
   "side-footballs-data.js",
   "side-hex-gems-data.js",
   "script.js",
+  "theme.js",
 ];
 
 function loadScript(src) {
@@ -65,11 +68,30 @@ export function applyToDesigner({ pattern, color }) {
   target?.scrollIntoView({ behavior: "smooth", block: narrow ? "center" : "start" });
 }
 
+// The builder script binds to its elements once, so the same elements are kept for the whole visit
+// and moved back in whenever the designer page is shown again.
+let host = null;
+function designerHost() {
+  if (!host) {
+    host = document.createElement("div");
+    host.className = "e3d-chime-configurator";
+    host.dataset.productId = "12";
+    host.innerHTML = markup;
+  }
+  return host;
+}
+
 function Designer() {
+  const slot = useRef(null);
   useEffect(() => {
-    loadDesigner().catch((error) => console.error(error));
+    const el = designerHost();
+    slot.current.appendChild(el);
+    loadDesigner()
+      .then(() => window.dispatchEvent(new Event("resize")))
+      .catch((error) => console.error(error));
+    return () => el.remove();
   }, []);
-  return <div className="e3d-chime-configurator" data-product-id="12" dangerouslySetInnerHTML={{ __html: markup }} />;
+  return <div ref={slot} className="designer-slot" />;
 }
 
 export default memo(Designer);

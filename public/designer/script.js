@@ -1,10 +1,11 @@
+const sidePatternMetricCache = new WeakMap();
 const IN_TO_MM = 25.4;
 const E3D_SETTINGS = (window.E3D_CHIME_CONFIG && window.E3D_CHIME_CONFIG.settings) ? window.E3D_CHIME_CONFIG.settings : {};
 const settingNumber = function(key, fallback) { const value = Number(E3D_SETTINGS[key]); return Number.isFinite(value) ? value : fallback; };
-const settingBool = function(key, fallback) { return typeof E3D_SETTINGS[key] === 'boolean' ? E3D_SETTINGS[key] : fallback; };
-const settingText = function(key, fallback) { return (typeof E3D_SETTINGS[key] === 'string' && E3D_SETTINGS[key].length) ? E3D_SETTINGS[key] : fallback; };
 const MODEL_SCALE = 0.028;
-const WALL_MM = 2;
+const DEFAULT_WALL_MM = 2;
+const DEFAULT_FACE_THICKNESS_MM = 2;
+const WALL_MM = DEFAULT_WALL_MM;
 const FACE_INSET_MM = 2;
 const CHAMFER_DEPTH_MM = 3;
 const INTERNAL_FACE_WALL_CHAMFER_MM = 1;
@@ -12,19 +13,7 @@ const EXPORT_INTERIOR_CLEARANCE_MM = 1;
 const CORNER_FILLET_MM = 3;
 const BELL_CLEARANCE_MM = 4;
 const MIN_BELL_WEB_MM = 14;
-const DEFAULT_CAMERA_POSITION = E3D_SETTINGS.cameraReset && typeof E3D_SETTINGS.cameraReset === 'object' ? {
-  x: settingNumberFromObject(E3D_SETTINGS.cameraReset, 'x', -4.6),
-  y: settingNumberFromObject(E3D_SETTINGS.cameraReset, 'y', 3.05),
-  z: settingNumberFromObject(E3D_SETTINGS.cameraReset, 'z', 5.85)
-} : { x: -4.6, y: 3.05, z: 5.85 };
-function settingNumberFromObject(obj, key, fallback) { const value = Number(obj && obj[key]); return Number.isFinite(value) ? value : fallback; }
-const CAMERA_ANGLES = E3D_SETTINGS.cameraAngles && typeof E3D_SETTINGS.cameraAngles === 'object' ? E3D_SETTINGS.cameraAngles : {};
-const AUTO_VIEW_DURATION_MS = settingNumber('autoViewDurationMs', 700);
-const DIMENSION_AUTO_FIT_DELAY_MS = 450;
-const SIDE_LAYOUT_INPUT_DELAY_MS = 850;
-const PATTERN_SAFE_MARGINS = E3D_SETTINGS.patternSafeMargins && typeof E3D_SETTINGS.patternSafeMargins === 'object' ? E3D_SETTINGS.patternSafeMargins : { front: 2.5, side: 0 };
-const LABEL_OFFSETS = E3D_SETTINGS.labelOffsets && typeof E3D_SETTINGS.labelOffsets === 'object' ? E3D_SETTINGS.labelOffsets : {};
-
+const DEFAULT_CAMERA_POSITION = { x: -5.25, y: 3.2, z: 6.55 };
 const PRICE_BASE = settingNumber("priceBase", 16.16);
 const PRICE_MULTIPLIER = settingNumber("priceMultiplier", 1.185);
 const PRICE_EXPONENT = settingNumber("priceExponent", 0.5753);
@@ -38,35 +27,10 @@ const OVERSIZE_THRESHOLD_IN = settingNumber("oversizeThresholdIn", 10);
 const MAX_DIMENSION_IN = settingNumber("maxDimensionIn", 16);
 const OVERSIZE_FEE_ADDON = settingNumber("oversizeFeeAddon", 10);
 const OVERSIZE_SHIPPING_ADDON = settingNumber("oversizeShippingAddon", 5);
-const PRICE_CARD_MESSAGE = settingText("priceCardMessage", "Live estimate before tax, shipping, or final design review.");
-const PRICE_LABELS = {
-  volume: settingText("priceVolumeLabel", "Volume"),
-  size: settingText("priceSizeLabel", "Size price"),
-  dualColor: settingText("priceDualColorLabel", "Dual color"),
-  premiumColor: settingText("pricePremiumColorLabel", "Premium color"),
-  oversize: settingText("priceOversizeLabel", "Oversize add-on")
-};
-const OVERSIZE_WARNING_TEMPLATE = settingText("oversizeWarningText", "Any dimension {threshold} in or larger adds a ${fee} oversized fee and ${shipping} additional shipping. Maximum dimension is {max} in.");
-const BELL_VALIDATION_TEXT = settingText("bellValidationText", "Enter both bell diameter and bell face from wall. Bell face from wall must be equal to or greater than bell diameter.");
 
 // Edit pattern options here. The labels populate the selectors automatically.
-const BUILT_IN_FRONT_PATTERNS = ["Arches", "Angles", "Diamonds", "Flowers", "Lines", "Petals", "Squares", "Stars", "Triangles", "Wedge Bloom", "Blank"];
-const BUILT_IN_SIDE_PATTERNS = ["Blank", "Diamonds", "Squiggles", "Footballs", "Hex Gems"];
-const CUSTOM_FRONT_PATTERN_DATA = Array.isArray(E3D_SETTINGS.customFrontPatterns) ? E3D_SETTINGS.customFrontPatterns.filter(function(pattern) { return pattern && pattern.name && Array.isArray(pattern.paths) && Array.isArray(pattern.viewBox); }) : [];
-const CUSTOM_SIDE_PATTERN_DATA = Array.isArray(E3D_SETTINGS.customSidePatterns) ? E3D_SETTINGS.customSidePatterns.filter(function(pattern) { return pattern && pattern.name && Array.isArray(pattern.paths) && Array.isArray(pattern.viewBox); }) : [];
-const CUSTOM_FRONT_PATTERN_NAMES = CUSTOM_FRONT_PATTERN_DATA.map(function(pattern) { return pattern.name; });
-const CUSTOM_SIDE_PATTERN_NAMES = CUSTOM_SIDE_PATTERN_DATA.map(function(pattern) { return pattern.name; });
-function applyPatternDisplayOrder(names, order) {
-  const uniqueNames = Array.from(new Set(names.filter(Boolean)));
-  if (!Array.isArray(order) || !order.length) return uniqueNames;
-  const ordered = [];
-  order.forEach(function(name) { if (uniqueNames.indexOf(name) !== -1 && ordered.indexOf(name) === -1) ordered.push(name); });
-  uniqueNames.forEach(function(name) { if (ordered.indexOf(name) === -1) ordered.push(name); });
-  return ordered;
-}
-const FRONT_PATTERNS = applyPatternDisplayOrder(BUILT_IN_FRONT_PATTERNS.concat(CUSTOM_FRONT_PATTERN_NAMES.filter(function(name) { return BUILT_IN_FRONT_PATTERNS.indexOf(name) === -1; })), E3D_SETTINGS.frontPatternOrder);
-const SIDE_PATTERNS = applyPatternDisplayOrder(BUILT_IN_SIDE_PATTERNS.concat(CUSTOM_SIDE_PATTERN_NAMES.filter(function(name) { return BUILT_IN_SIDE_PATTERNS.indexOf(name) === -1; })), E3D_SETTINGS.sidePatternOrder);
-const PATTERN_SCALES = E3D_SETTINGS.patternScales && typeof E3D_SETTINGS.patternScales === "object" ? E3D_SETTINGS.patternScales : { front: {}, side: {} };
+const FRONT_PATTERNS = ["Arches", "Angles", "Diamonds", "Flowers", "Lines", "Petals", "Squares", "Stars", "Triangles", "Wedge Bloom", "Blank"];
+const SIDE_PATTERNS = ["Blank", "Lines", "Diamonds", "Squiggles", "Footballs", "Hex Gems"];
 
 // Edit color options here. Add another label and hex value to offer more filament colors.
 const DEFAULT_COLOR_OPTIONS = [
@@ -94,7 +58,7 @@ const DEFAULT_HEIGHT_IN = settingNumber("defaultHeightIn", 4.75);
 const DEFAULT_DEPTH_IN = settingNumber("defaultDepthIn", 2);
 
 const DEFAULT_COLOR = COLOR_OPTIONS.find(function(color) { return color.label === "Gold"; }) || COLOR_OPTIONS.find(function(color) { return color.value !== "custom"; }) || { label: "White", value: "#e0deda", renderValue: "#d8d6ce", roughness: 0.78, metalness: 0 };
-const state = { bellCutoutEnabled: false, autoViewEnabled: settingBool('autoViewDefault', true), widthMm: DEFAULT_WIDTH_IN * IN_TO_MM, heightMm: DEFAULT_HEIGHT_IN * IN_TO_MM, depthMm: DEFAULT_DEPTH_IN * IN_TO_MM, frontPattern: "Blank", sidePattern: "Blank", sideShapeCount: 5, sideShapeSizeMm: 30, sideShapeSpacingMm: 10, sideShapeHeightMm: 8, faceColor: DEFAULT_COLOR.renderValue || DEFAULT_COLOR.value, wallColor: DEFAULT_COLOR.renderValue || DEFAULT_COLOR.value, faceColorLabel: DEFAULT_COLOR.label, wallColorLabel: DEFAULT_COLOR.label, faceRoughness: Number(DEFAULT_COLOR.roughness) || 0.78, faceMetalness: Number(DEFAULT_COLOR.metalness) || 0, wallRoughness: Number(DEFAULT_COLOR.roughness) || 0.78, wallMetalness: Number(DEFAULT_COLOR.metalness) || 0, bellCount: 1, bellSpacingMm: 0, bellDepthMm: 0, bellProjectionMm: 0, bellCutoutWidthMm: 0, bellCutoutDepthMm: 0, bellCutoutsMm: [], showDimensions: settingBool('dimensionLabelsDefault', true), lightBrightness: 1, priceBreakdown: null };
+const state = { bellCutoutEnabled: false, autoViewEnabled: true, widthMm: DEFAULT_WIDTH_IN * IN_TO_MM, heightMm: DEFAULT_HEIGHT_IN * IN_TO_MM, depthMm: DEFAULT_DEPTH_IN * IN_TO_MM, wallThicknessMm: DEFAULT_WALL_MM, faceThicknessMm: DEFAULT_FACE_THICKNESS_MM, frontPattern: "Blank", sidePattern: "Blank", sideShapeCount: 5, sideShapeSizePercent: 60, sideShapeSizeMm: 30, sideShapeSpacingMm: 28, sideShapeHeightMm: 8, faceColor: DEFAULT_COLOR.renderValue || DEFAULT_COLOR.value, wallColor: DEFAULT_COLOR.renderValue || DEFAULT_COLOR.value, faceColorLabel: DEFAULT_COLOR.label, wallColorLabel: DEFAULT_COLOR.label, faceRoughness: Number(DEFAULT_COLOR.roughness) || 0.78, faceMetalness: Number(DEFAULT_COLOR.metalness) || 0, wallRoughness: Number(DEFAULT_COLOR.roughness) || 0.78, wallMetalness: Number(DEFAULT_COLOR.metalness) || 0, bellCount: 1, bellSpacingMm: 0, bellDepthMm: 0, bellProjectionMm: 0, bellCutoutWidthMm: 0, bellCutoutDepthMm: 0, bellCutoutsMm: [], showDimensions: true, lightBrightness: 1, priceBreakdown: null };
 const els = {
   canvas: document.querySelector("#coverPreview"),
   dimensionUnit: document.querySelector("#dimensionUnit"), unitLabels: document.querySelectorAll("[data-unit-label]"), widthIn: document.querySelector("#widthInInput"), heightIn: document.querySelector("#heightInInput"), depthIn: document.querySelector("#depthInInput"),
@@ -102,38 +66,25 @@ const els = {
   autoViewToggle: document.querySelector("#autoViewToggle"), bellCutoutEnabled: document.querySelector("#bellCutoutEnabled"), bellCutoutBody: document.querySelector("#bellCutoutBody"), bellUnit: document.querySelector("#bellUnitSelect"), bellUnitLabels: document.querySelectorAll("[data-bell-unit-label]"), bellCount: document.querySelectorAll('input[name="bellCount"]'), bellSpacingField: document.querySelector("#bellSpacingField"), bellSpacingIn: document.querySelector("#bellSpacingInInput"), bellDepthIn: document.querySelector("#bellDepthInInput"), bellProjectionIn: document.querySelector("#bellProjectionInInput"),
   bellSpacingMm: document.querySelector("#bellSpacingMmInput"), bellDepthMm: document.querySelector("#bellDepthMmInput"), bellProjectionMm: document.querySelector("#bellProjectionMmInput"), bellMergeNotice: document.querySelector("#bellMergeNotice"), bellCutoutReadout: document.querySelector("#bellCutoutReadout"), bellError: document.querySelector("#bellError"),
   inchesReadout: document.querySelector("#inchesReadout"), millimetersReadout: document.querySelector("#millimetersReadout"), centimetersReadout: document.querySelector("#centimetersReadout"),
-  dimensionError: document.querySelector("#dimensionError"), oversizeWarning: document.querySelector("#oversizeWarning"), frontPattern: document.querySelector("#frontPattern"), sidePattern: document.querySelector("#sidePattern"), sidePatternControls: document.querySelector("#sidePatternControls"), sideShapeCount: document.querySelectorAll('input[name="sideShapeCount"]'), sideShapeSize: document.querySelector("#sideShapeSizeInput"), sideShapeSpacing: document.querySelector("#sideShapeSpacingInput"), sidePatternError: document.querySelector("#sidePatternError"),
+  dimensionError: document.querySelector("#dimensionError"), oversizeWarning: document.querySelector("#oversizeWarning"), wallThickness: document.querySelector("#wallThicknessInput"), faceThickness: document.querySelector("#faceThicknessInput"), frontPattern: document.querySelector("#frontPattern"), sidePattern: document.querySelector("#sidePattern"), sidePatternControls: document.querySelector("#sidePatternControls"), sideShapeCount: document.querySelectorAll('input[name="sideShapeCount"]'), sideShapeSize: document.querySelector("#sideShapeSizeInput"), sideShapeSpacing: document.querySelector("#sideShapeSpacingInput"), sidePatternError: document.querySelector("#sidePatternError"),
   faceColorSelect: document.querySelector("#faceColorSelect"), wallColorSelect: document.querySelector("#wallColorSelect"), faceCustomColorRow: document.querySelector("#faceCustomColorRow"), faceCustomColorInput: document.querySelector("#faceCustomColorInput"), colorModeNote: document.querySelector("#colorModeNote"), faceColorLabelText: document.querySelector("#faceColorLabelText"), wallColorGroup: document.querySelector("#wallColorGroup"), wallColorLabelText: document.querySelector("#wallColorLabelText"),
   faceSwatches: document.querySelector("#faceColorSwatches"), wallSwatches: document.querySelector("#wallColorSwatches"), notes: document.querySelector("#notesInput"), form: document.querySelector("#quoteForm"),
   summaryCard: document.querySelector("#summaryCard"), summaryContent: document.querySelector("#summaryContent"), previewCaption: document.querySelector("#previewCaption"),
-  frontLabel: document.querySelector("#frontLabel"), sideLabel: document.querySelector("#sideLabel"), fitCheckCard: document.querySelector("#fitCheckCard"), fitCheckStatus: document.querySelector("#fitCheckStatus"), fitCheckTitle: document.querySelector("#fitCheckTitle"), fitCheckList: document.querySelector("#fitCheckList"), priceTotal: document.querySelector("#priceTotal"), priceMessage: document.querySelector("#priceMessage"), priceBreakdown: document.querySelector("#priceBreakdown"), resetCamera: document.querySelector("#resetCameraButton"), standardReset: document.querySelector("#standardResetButton"), copyConfig: document.querySelector("#copyConfigButton"), dimensionToggle: document.querySelector("#dimensionToggle"), lightBrightness: document.querySelector("#lightBrightness"), lightBrightnessValue: document.querySelector("#lightBrightnessValue")
+  frontLabel: document.querySelector("#frontLabel"), sideLabel: document.querySelector("#sideLabel"), priceTotal: document.querySelector("#priceTotal"), priceMessage: document.querySelector("#priceMessage"), priceBreakdown: document.querySelector("#priceBreakdown"), resetCamera: document.querySelector("#resetCameraButton"), dimensionToggle: document.querySelector("#dimensionToggle"), lightBrightness: document.querySelector("#lightBrightness"), lightBrightnessValue: document.querySelector("#lightBrightnessValue")
 };
-let renderer, scene, camera, controls, coverGroup, labelGroup, lightRig, syncingUnits = false, syncingBellUnits = false, cameraTransitionFrame = null, dimensionFitTimer = null, sideLayoutTimer = null, lastDimensionFitSignature = "";
+let renderer, scene, camera, controls, coverGroup, labelGroup, lightRig, syncingUnits = false, syncingBellUnits = false, cameraTransitionFrame = null;
 
-applyAdminDefaultsToControls(); populateControls(); initScene(); bindEvents(); setupExportButtons(); setupMeasurementHelp(); updateDimensionUnitUI(); updateBellUnitUI(); updateBellCutoutToggleUI(); syncMetricFromActiveUnit(); syncBellMetricFromActiveUnit(); updateFromInputs(); lastDimensionFitSignature = getDimensionFitSignature(); animate();
-
-function applyAdminDefaultsToControls() {
-  if (els.dimensionToggle) els.dimensionToggle.checked = state.showDimensions;
-  if (els.autoViewToggle) els.autoViewToggle.checked = state.autoViewEnabled;
-}
+populateControls(); initScene(); bindEvents(); setupExportButtons(); setupMeasurementHelp(); updateDimensionUnitUI(); updateBellUnitUI(); updateBellCutoutToggleUI(); syncMetricFromActiveUnit(); syncBellMetricFromActiveUnit(); updateFromInputs(); animate();
 
 function populateControls() {
   FRONT_PATTERNS.forEach(function(pattern) { els.frontPattern.add(new Option(pattern, pattern)); });
   SIDE_PATTERNS.forEach(function(pattern) { els.sidePattern.add(new Option(pattern, pattern)); });
   COLOR_OPTIONS.forEach(function(color) {
-    if (!color || !color.label || color.value === undefined) return;
     els.faceColorSelect.add(new Option(color.label, color.value));
     if (color.value !== "custom") els.wallColorSelect.add(new Option(color.label, color.value));
   });
-
-  const defaultOption = COLOR_OPTIONS.find(function(color) { return color && color.label === "Gold" && color.value !== "custom"; }) ||
-    COLOR_OPTIONS.find(function(color) { return color && color.value !== "custom"; });
-
-  if (defaultOption) {
-    els.faceColorSelect.value = defaultOption.value;
-    els.wallColorSelect.value = defaultOption.value;
-  }
-
+  els.faceColorSelect.value = "#e1c156";
+  els.wallColorSelect.value = "#e1c156";
   buildColorSwatches(els.faceSwatches, els.faceColorSelect, "face");
   buildColorSwatches(els.wallSwatches, els.wallColorSelect, "wall");
 }
@@ -164,69 +115,6 @@ function updateSwatchSelection(container, value) {
   });
 }
 
-function getPatternScale(kind, patternName) {
-  const typeScales = PATTERN_SCALES && PATTERN_SCALES[kind] && typeof PATTERN_SCALES[kind] === "object" ? PATTERN_SCALES[kind] : {};
-  const saved = typeScales[patternName] || {};
-  const data = kind === "front"
-    ? CUSTOM_FRONT_PATTERN_DATA.find(function(pattern) { return pattern.name === patternName; })
-    : CUSTOM_SIDE_PATTERN_DATA.find(function(pattern) { return pattern.name === patternName; });
-  const sxRaw = saved.x ?? saved.scaleX ?? data?.scaleX ?? 100;
-  const syRaw = saved.y ?? saved.scaleY ?? data?.scaleY ?? 100;
-  const offsetXRaw = saved.offsetX ?? data?.offsetX ?? 0;
-  const offsetYRaw = saved.offsetY ?? data?.offsetY ?? 0;
-  const rotationRaw = saved.rotation ?? data?.rotation ?? 0;
-  const sx = Math.max(0.5, Math.min(2, (Number(sxRaw) || 100) / 100));
-  const sy = Math.max(0.5, Math.min(2, (Number(syRaw) || 100) / 100));
-  const ox = Math.max(-0.5, Math.min(0.5, (Number(offsetXRaw) || 0) / 100));
-  const oy = Math.max(-0.5, Math.min(0.5, (Number(offsetYRaw) || 0) / 100));
-  const rotation = THREE.MathUtils.degToRad(Math.max(-180, Math.min(180, Number(rotationRaw) || 0)));
-  return { x: sx, y: sy, offsetX: ox, offsetY: oy, rotation: rotation };
-}
-
-
-function getSvgArtworkBounds(pathElements, fallbackViewBox) {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  pathElements.forEach(function(pathElement) {
-    try {
-      const box = pathElement.getBBox();
-      if (!box || !Number.isFinite(box.x) || !Number.isFinite(box.y) || !Number.isFinite(box.width) || !Number.isFinite(box.height)) return;
-      if (box.width <= 0 || box.height <= 0) return;
-      minX = Math.min(minX, box.x);
-      minY = Math.min(minY, box.y);
-      maxX = Math.max(maxX, box.x + box.width);
-      maxY = Math.max(maxY, box.y + box.height);
-    } catch (err) {}
-  });
-  if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY) || maxX <= minX || maxY <= minY) {
-    return {
-      x: fallbackViewBox[0],
-      y: fallbackViewBox[1],
-      w: fallbackViewBox[2],
-      h: fallbackViewBox[3]
-    };
-  }
-  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
-}
-
-function shouldTrimSvgPatternToArtwork(data) {
-  return !!(data && (data.id || data.source || data.trimToArtwork));
-}
-
-function getFacePatternSvgData(patternName) {
-  if (patternName === "Angles") return window.ANGLES_PATTERN_SVG || null;
-  if (patternName === "Diamonds") return window.DIAMONDS_PATTERN_SVG || null;
-  if (patternName === "Flowers") return window.FLOWERS_PATTERN_SVG || null;
-  if (patternName === "Lines") return window.LINES_PATTERN_SVG || null;
-  if (patternName === "Petals") return window.PETALS_PATTERN_SVG || null;
-  if (patternName === "Squares") return window.SQUARES_PATTERN_SVG || null;
-  if (patternName === "Stars") return window.STARS_PATTERN_SVG || null;
-  if (patternName === "Triangles") return window.TRIANGLES_PATTERN_SVG || null;
-  if (patternName === "Wedge Bloom") return window.WEDGE_BLOOM_PATTERN_SVG || null;
-  if (patternName === "Arches") return window.ARCHES_PATTERN_SVG || null;
-  const customPattern = CUSTOM_FRONT_PATTERN_DATA.find(function(pattern) { return pattern.name === patternName; });
-  return customPattern || null;
-}
-
 function initScene() {
   scene = new THREE.Scene(); scene.background = new THREE.Color(0x202929);
   const wrap = els.canvas.parentElement;
@@ -236,9 +124,6 @@ function initScene() {
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.NoToneMapping;
   controls = new THREE.OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.minDistance = 6; controls.maxDistance = 40; controls.target.set(0, 0, 0);
-  controls.addEventListener("start", cancelDimensionAutoFit);
-  renderer.domElement.addEventListener("pointerdown", cancelDimensionAutoFit);
-  renderer.domElement.addEventListener("wheel", cancelDimensionAutoFit, { passive: true });
   // Locked neutral 5000K-style preview lighting. Keep this bright and right/front biased for color matching.
   const ambient = new THREE.AmbientLight(0xffffff, 0.32); scene.add(ambient);
   const key = new THREE.DirectionalLight(0xffffff, 0.58); key.position.set(7.2, 1.25, 2.2); scene.add(key);
@@ -306,10 +191,21 @@ function bindEvents() {
       updateFromInputs();
     });
   }
-  [els.widthIn, els.heightIn, els.depthIn].forEach(function(input) { input.addEventListener("input", function() { if (syncingUnits) return; syncMetricFromActiveUnit(); updateFromInputs(); requestDimensionAutoFit(); }); });
-  els.dimensionUnit.addEventListener("change", function() { setActiveInputsFromMillimeters(); updateDimensionUnitUI(); updateFromInputs(); requestDimensionAutoFit(); });
+  [els.widthIn, els.heightIn, els.depthIn].forEach(function(input) { input.addEventListener("input", function() { if (syncingUnits) return; syncMetricFromActiveUnit(); updateFromInputs(); }); });
+  [els.wallThickness, els.faceThickness].forEach(function(input) { input.addEventListener("input", updateFromInputs); });
+  els.dimensionUnit.addEventListener("change", function() { setActiveInputsFromMillimeters(); updateDimensionUnitUI(); updateFromInputs(); });
   els.bellCount.forEach(function(input) { input.addEventListener("change", function() { updateBellSpacingVisibility(); updateFromInputs(); }); });
-  els.sideShapeCount.forEach(function(input) { input.addEventListener("change", updateFromInputs); });
+  // Let native number controls update immediately; rebuild once after a burst of clicks.
+  let sideLayoutTimer;
+  const sideLayoutInputs = [els.sideShapeSize, els.sideShapeSpacing].concat(Array.from(els.sideShapeCount));
+  sideLayoutInputs.forEach(function(input) {
+    function scheduleSideLayout() {
+      window.clearTimeout(sideLayoutTimer);
+      sideLayoutTimer = window.setTimeout(updateFromInputs, 250);
+    }
+    input.addEventListener("input", scheduleSideLayout);
+    input.addEventListener("change", scheduleSideLayout);
+  });
   els.bellUnit.addEventListener("change", function() { setBellActiveInputsFromMillimeters(); updateBellUnitUI(); updateFromInputs(); });
   [els.bellSpacingIn, els.bellDepthIn, els.bellProjectionIn].forEach(function(input) { input.addEventListener("input", function() { if (syncingBellUnits) return; syncBellMetricFromActiveUnit(); updateFromInputs(); }); });
   const bellInputs = Array.from(els.bellCount).concat([els.bellUnit, els.bellSpacingIn, els.bellDepthIn, els.bellProjectionIn]);
@@ -325,24 +221,14 @@ function bindEvents() {
       }, 0);
     });
   });
-  [els.sideShapeSize, els.sideShapeSpacing].forEach(function(input) {
-    if (!input) return;
-    input.addEventListener("input", requestSideLayoutUpdate);
-    input.addEventListener("change", flushSideLayoutUpdate);
-    input.addEventListener("blur", flushSideLayoutUpdate);
-  });
-  [els.frontPattern, els.sidePattern, els.faceColorSelect, els.wallColorSelect, els.faceCustomColorInput].forEach(function(input) { if (input) input.addEventListener("input", updateFromInputs); });
+  [els.frontPattern, els.sidePattern, els.faceColorSelect, els.wallColorSelect, els.faceCustomColorInput].forEach(function(input) { input.addEventListener("input", updateFromInputs); });
   attachSelectViewSnap(els.frontPattern, snapCameraToFrontView);
   attachSelectViewSnap(els.sidePattern, snapCameraToLeftSideView);
+  [els.sideShapeSize, els.sideShapeSpacing].concat(Array.from(els.sideShapeCount)).forEach(function(input) { attachSelectViewSnap(input, snapCameraToLeftSideView); });
   attachSelectViewSnap(els.faceColorSelect, snapCameraToColorView);
   attachSelectViewSnap(els.wallColorSelect, snapCameraToColorView);
   attachSelectViewSnap(els.faceCustomColorInput, snapCameraToColorView);
   els.resetCamera.addEventListener("click", function() { resetCameraPosition(); controls.target.set(0, 0, 0); controls.update(); });
-  if (els.standardReset) els.standardReset.addEventListener("click", resetToStandardCover);
-  if (els.copyConfig) els.copyConfig.addEventListener("click", copyConfigurationSummary);
-  document.querySelectorAll("[data-view-preset]").forEach(function(button) {
-    button.addEventListener("click", function() { snapToViewPreset(button.dataset.viewPreset); });
-  });
   els.dimensionToggle.addEventListener("change", function() { state.showDimensions = els.dimensionToggle.checked; buildCover(); });
   if (els.autoViewToggle) { els.autoViewToggle.addEventListener("change", function() { state.autoViewEnabled = els.autoViewToggle.checked; }); }
   els.lightBrightness.addEventListener("input", function() { state.lightBrightness = Number(els.lightBrightness.value) / 100; applyLightBrightness(); });
@@ -496,7 +382,7 @@ function updateDimensionReadouts() {
 }
 
 function updateFromInputs() {
-  if (!readDimensions()) return;
+  if (!readDimensions() || !readProductionThicknesses()) return;
   readBellDimensions();
   state.frontPattern = els.frontPattern.value; state.sidePattern = els.sidePattern.value;
   readSidePatternControls();
@@ -511,107 +397,81 @@ function updateFromInputs() {
   validateSidePatternLayout(false);
   state.showDimensions = els.dimensionToggle.checked;
   buildCover();
-  updateFitCheck();
 }
 
-function requestSideLayoutUpdate() {
-  if (sideLayoutTimer) window.clearTimeout(sideLayoutTimer);
-  sideLayoutTimer = window.setTimeout(function() {
-    sideLayoutTimer = null;
-    updateFromInputs();
-  }, SIDE_LAYOUT_INPUT_DELAY_MS);
+function readSidePatternControls() {
+  const selectedCount = els.sideShapeCount[0];
+  state.sideShapeCount = Math.max(1, Math.round(Number(selectedCount ? selectedCount.value : 5) || 1));
+
+  state.sideShapeSizePercent = Number(els.sideShapeSize ? els.sideShapeSize.value : 60) || 0;
+  state.sideShapeSizeMm = state.depthMm * state.sideShapeSizePercent / 100;
+  document.querySelector("#sideShapeSizeReadout").textContent = toFixedSmart(state.sideShapeSizeMm, 1) + " mm actual size";
+  state.sideShapeSpacingMm = Number(els.sideShapeSpacing ? els.sideShapeSpacing.value : 28) || 0;
+  const metrics = getSidePatternShapeMetrics();
+  state.sideShapeHeightMm = metrics ? metrics.heightMm : state.sideShapeSizeMm;
+  const active = state.sidePattern !== "Blank";
+  if (els.sidePatternControls) els.sidePatternControls.classList.toggle("is-disabled", !active);
+  [els.sideShapeSize, els.sideShapeSpacing].concat(Array.from(els.sideShapeCount || [])).forEach(function(input) {
+    if (input) input.disabled = !active;
+  });
 }
 
-function flushSideLayoutUpdate() {
-  if (!sideLayoutTimer) return;
-  window.clearTimeout(sideLayoutTimer);
-  sideLayoutTimer = null;
-  updateFromInputs();
-}
-
-function resetToStandardCover() {
-  els.dimensionUnit.value = "in";
-  els.heightIn.value = toFixedSmart(DEFAULT_HEIGHT_IN, 3);
-  els.widthIn.value = toFixedSmart(DEFAULT_WIDTH_IN, 3);
-  els.depthIn.value = toFixedSmart(DEFAULT_DEPTH_IN, 3);
-  els.frontPattern.value = "Arches";
-  els.sidePattern.value = "Blank";
-  setSideShapeCount(5);
-  if (els.sideShapeSize) els.sideShapeSize.value = "30";
-  if (els.sideShapeSpacing) els.sideShapeSpacing.value = "10";
-  els.faceColorSelect.value = DEFAULT_COLOR.value;
-  els.wallColorSelect.value = DEFAULT_COLOR.value;
-  if (els.bellCutoutEnabled) els.bellCutoutEnabled.checked = false;
-  updateDimensionUnitUI();
-  syncMetricFromActiveUnit();
-  updateBellCutoutToggleUI();
-  updateFromInputs();
-  fitCameraToCurrentCover();
-}
-
-function copyConfigurationSummary() {
-  const payload = buildConfiguredCoverPayload();
-  const lines = [
-    "Express 3D Customs chime cover design",
-    "Dimensions: " + payload.heightIn + " H x " + payload.widthIn + " W x " + payload.depthIn + " D in",
-    "Metric: " + payload.heightMm + " H x " + payload.widthMm + " W x " + payload.depthMm + " D mm",
-    "Front pattern: " + payload.frontPattern,
-    "Side pattern: " + payload.sidePattern + (payload.sidePattern === "Blank" ? "" : " (" + payload.sideShapeCount + " cutouts, " + payload.sideShapeSizeMm + " mm, " + payload.sideShapeSpacingMm + " mm spacing)"),
-    "Face color: " + payload.faceColor,
-    "Wall color: " + payload.wallColor,
-    "Bell cutout: " + payload.bellCutout,
-    "Estimated price: " + payload.estimatedPriceFormatted,
-    "Notes: " + (payload.notes || "None")
-  ];
-  const text = lines.join("\n");
-  const done = function() {
-    if (!els.copyConfig) return;
-    const original = els.copyConfig.textContent;
-    els.copyConfig.textContent = "Copied";
-    window.setTimeout(function() { els.copyConfig.textContent = original; }, 1400);
-  };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(done).catch(function() { window.prompt("Copy this design summary:", text); });
-  } else {
-    window.prompt("Copy this design summary:", text);
+function validateSidePatternLayout(showAlert) {
+  if (state.sidePattern === "Blank") {
+    els.sidePatternError.textContent = "";
+    return true;
   }
+  const notes = [];
+  const heightAvailable = state.heightMm - 20;
+  const depthAvailable = state.depthMm - 10;
+  const metrics = getSidePatternShapeMetrics();
+  const ratio = state.sidePattern === "Lines" ? 0 : (metrics ? metrics.heightMm / Math.max(metrics.widthMm, 0.001) : 1);
+  const maxSize = Math.max(0, Math.min(depthAvailable, ratio ? heightAvailable / ratio : Infinity));
+  const minSize = Math.min(5, maxSize);
+  function adjust(input, value, min, max, label) {
+    const step = input === els.sideShapeCount[0] ? 1 : 0.5;
+    min = Math.ceil(min / step) * step;
+    max = Math.floor(max / step) * step;
+    min = Math.min(min, max);
+    const fixed = Math.min(max, Math.max(min, Math.round(value / step) * step));
+    input.step = step;
+    input.min = min; input.max = max;
+    input.value = Number(fixed.toFixed(3));
+    if (Math.abs(value - fixed) > 0.00001) notes.push(label + (value < min || value > max ? " is outside the bounds of the current dimensions; adjusted to " : " rounded to the nearest " + step + " increment: ") + Number(fixed.toFixed(3)) + ".");
+    return fixed;
+  }
+  state.sideShapeSizePercent = adjust(els.sideShapeSize, state.sideShapeSizePercent, minSize / state.depthMm * 100, maxSize / state.depthMm * 100, "Shape size (% of depth)");
+  state.sideShapeSizeMm = state.depthMm * state.sideShapeSizePercent / 100;
+  document.querySelector("#sideShapeSizeReadout").textContent = toFixedSmart(state.sideShapeSizeMm, 1) + " mm actual size";
+  const shapeHeight = ratio ? state.sideShapeSizeMm * ratio : 3.5;
+  state.sideShapeHeightMm = shapeHeight;
+  const minSpacing = Math.ceil(Math.max(10, state.depthMm / 5) * 2) / 2;
+  document.querySelector("#sideShapeSpacingReadout").textContent = "Minimum: " + toFixedSmart(minSpacing, 1) + " mm for this depth";
+  const maxCount = maxSize > 0 && heightAvailable >= shapeHeight ? Math.max(1, Math.floor((heightAvailable - shapeHeight) / (shapeHeight + minSpacing)) + 1) : 0;
+  state.sideShapeCount = adjust(els.sideShapeCount[0], state.sideShapeCount, maxCount ? 1 : 0, maxCount, "Shapes per side");
+  const maxSpacing = state.sideShapeCount > 1 ? (heightAvailable - shapeHeight) / (state.sideShapeCount - 1) - shapeHeight : Math.max(minSpacing, heightAvailable);
+  state.sideShapeSpacingMm = adjust(els.sideShapeSpacing, state.sideShapeSpacingMm, minSpacing, Math.max(minSpacing, maxSpacing), "Space between shapes (mm)");
+  if (!maxCount) notes.push("No side elements fit within the current dimensions. Increase cover height or depth.");
+  els.sidePatternError.textContent = notes.join(" ");
+  return maxCount > 0;
 }
 
-function snapToViewPreset(view) {
-  if (view === "front") return snapCameraToFrontView();
-  if (view === "side") return snapCameraToLeftSideView();
-  if (view === "bottom") return snapCameraToBottomView();
-  if (view === "inside") return snapCameraToInsideView();
-  fitCameraToCurrentCover();
+function readProductionThicknesses() {
+  const wall = Number(els.wallThickness ? els.wallThickness.value : DEFAULT_WALL_MM);
+  const face = Number(els.faceThickness ? els.faceThickness.value : DEFAULT_FACE_THICKNESS_MM);
+  const validWall = Number.isFinite(wall) && wall > 0;
+  const validFace = Number.isFinite(face) && face > 0;
+  if (els.wallThickness) els.wallThickness.setAttribute("aria-invalid", validWall ? "false" : "true");
+  if (els.faceThickness) els.faceThickness.setAttribute("aria-invalid", validFace ? "false" : "true");
+  if (!validWall || !validFace) return false;
+  state.wallThicknessMm = clamp(wall, 0.8, 8);
+  state.faceThicknessMm = clamp(face, 0.8, 8);
+  return true;
 }
 
 function updatePreviewBadges() {
   els.frontLabel.innerHTML = buildPreviewBadgeHtml("Front", state.frontPattern, "Face color", state.faceColorLabel);
   els.sideLabel.innerHTML = buildPreviewBadgeHtml("Sides", state.sidePattern, "Wall color", state.wallColorLabel);
-}
-
-function updateFitCheck() {
-  if (!els.fitCheckCard) return;
-  const issues = collectFitIssues();
-  const blocking = issues.filter(function(issue) { return issue.type === "error"; });
-  const warnings = issues.filter(function(issue) { return issue.type !== "error"; });
-  els.fitCheckCard.classList.toggle("is-ready", !issues.length);
-  els.fitCheckCard.classList.toggle("is-warning", !blocking.length && warnings.length > 0);
-  els.fitCheckCard.classList.toggle("is-error", blocking.length > 0);
-  els.fitCheckStatus.textContent = blocking.length ? "Needs attention" : warnings.length ? "Review before ordering" : "Ready to print";
-  els.fitCheckTitle.textContent = blocking.length ? "Fix these items" : warnings.length ? "A few notes apply" : "Fit check passed";
-  els.fitCheckList.innerHTML = issues.length ? issues.map(function(issue) { return "<li>" + escapeHtml(issue.text) + "</li>"; }).join("") : "<li>No fit issues detected.</li>";
-}
-
-function collectFitIssues() {
-  const issues = [];
-  if (els.dimensionError && els.dimensionError.textContent.trim()) issues.push({ type: "error", text: els.dimensionError.textContent.trim() });
-  if (els.sidePatternError && els.sidePatternError.textContent.trim()) issues.push({ type: "error", text: els.sidePatternError.textContent.trim() });
-  if (els.bellError && els.bellError.textContent.trim()) issues.push({ type: "error", text: els.bellError.textContent.trim() });
-  if (els.oversizeWarning && !els.oversizeWarning.hidden && els.oversizeWarning.textContent.trim()) issues.push({ type: "warning", text: els.oversizeWarning.textContent.trim() });
-  if (els.bellMergeNotice && !els.bellMergeNotice.hidden && els.bellMergeNotice.textContent.trim()) issues.push({ type: "warning", text: els.bellMergeNotice.textContent.trim() });
-  if (hasDistinctDualColors()) issues.push({ type: "info", text: "Two-tone color fee is included." });
-  return issues;
 }
 
 function buildPreviewBadgeHtml(patternLabel, patternValue, colorLabel, colorValue) {
@@ -632,104 +492,13 @@ function updateColorModeControls() {
 }
 
 
-
-function readSidePatternControls() {
-  const selectedCount = Array.from(els.sideShapeCount || []).find(function(input) { return input.checked; });
-  state.sideShapeCount = clamp(Math.round(Number(selectedCount ? selectedCount.value : 5)), 1, 5);
-  if (![1, 3, 5].includes(state.sideShapeCount)) state.sideShapeCount = 5;
-
-  // Do not clamp/write back while the user is actively typing. This prevents
-  // entering values like 11 from immediately snapping to 10 after the first "1".
-  const sizeInputFocused = els.sideShapeSize && document.activeElement === els.sideShapeSize;
-  const rawSize = els.sideShapeSize ? String(els.sideShapeSize.value || "").trim() : "30";
-  const parsedSize = Number(rawSize);
-  if (Number.isFinite(parsedSize) && parsedSize >= 10 && parsedSize <= 40) {
-    state.sideShapeSizeMm = parsedSize;
-  } else if (!sizeInputFocused) {
-    state.sideShapeSizeMm = clamp(Number.isFinite(parsedSize) ? parsedSize : 30, 10, 40);
-    if (els.sideShapeSize) els.sideShapeSize.value = toFixedSmart(state.sideShapeSizeMm, 2);
-  }
-
-  const gapInputFocused = els.sideShapeSpacing && document.activeElement === els.sideShapeSpacing;
-  const rawGap = els.sideShapeSpacing ? String(els.sideShapeSpacing.value || "").trim() : "10";
-  const parsedGap = Number(rawGap);
-  if (Number.isFinite(parsedGap) && parsedGap >= 0 && parsedGap <= 160) {
-    state.sideShapeSpacingMm = parsedGap;
-  } else if (!gapInputFocused) {
-    state.sideShapeSpacingMm = clamp(Number.isFinite(parsedGap) ? parsedGap : 10, 0, 160);
-    if (els.sideShapeSpacing) els.sideShapeSpacing.value = toFixedSmart(state.sideShapeSpacingMm, 2);
-  }
-
-  const metrics = getSidePatternShapeMetrics();
-  state.sideShapeHeightMm = metrics ? metrics.heightMm : state.sideShapeSizeMm;
-  autoFitSideShapeCount();
-  const active = state.sidePattern !== "Blank";
-  if (els.sidePatternControls) els.sidePatternControls.classList.toggle("is-disabled", !active);
-  [els.sideShapeSize, els.sideShapeSpacing].concat(Array.from(els.sideShapeCount || [])).forEach(function(input) {
-    if (input) input.disabled = !active;
-  });
-}
-
-function getSideLayoutIssue(countOverride) {
-  if (!state.sidePattern || state.sidePattern === "Blank") return "";
-  const marginMm = 5;
-  const metrics = getSidePatternShapeMetrics();
-  const shapeWidth = metrics ? metrics.widthMm : state.sideShapeSizeMm;
-  const shapeHeight = metrics ? metrics.heightMm : state.sideShapeHeightMm;
-  const count = countOverride || state.sideShapeCount || 1;
-  const gapMm = Math.max(0, Number(state.sideShapeSpacingMm) || 0);
-  const totalHeight = (shapeHeight * count) + Math.max(0, count - 1) * gapMm;
-  if (shapeWidth > Math.max(0, state.depthMm - marginMm * 2)) {
-    return "Side cutout must stay at least 5 mm from the front/back edge. Reduce shape size or increase cover depth.";
-  }
-  if (count > 1 && gapMm < 10) {
-    return "Side cutouts need at least 10 mm of open space between each pattern. Increase the spacing between cutouts.";
-  }
-  if (totalHeight > Math.max(0, state.heightMm - marginMm * 2)) {
-    return "Side cutouts must stay at least 5 mm from the top/bottom edge. Reduce size, spacing, or number of cutouts.";
-  }
-  return "";
-}
-
-function setSideShapeCount(count) {
-  state.sideShapeCount = count;
-  Array.from(els.sideShapeCount || []).forEach(function(input) {
-    input.checked = Number(input.value) === count;
-  });
-}
-
-function autoFitSideShapeCount() {
-  if (!state.sidePattern || state.sidePattern === "Blank") return;
-  const preferred = state.sideShapeCount || 5;
-  const options = [5, 3, 1].filter(function(count) { return count <= preferred; });
-  for (const count of options) {
-    if (!getSideLayoutIssue(count)) {
-      if (count !== state.sideShapeCount) setSideShapeCount(count);
-      return;
-    }
-  }
-}
-
-function validateSidePatternLayout(showAlert) {
-  const message = getSideLayoutIssue();
-  if (els.sidePatternError) els.sidePatternError.textContent = message;
-  if (message && showAlert) alert(message);
-  return !message;
-}
-
 function applyColorSelection(target, select, customRow, customInput) {
-  if (!select) return;
-  let selected = COLOR_OPTIONS.find(function(color) { return color && color.value === select.value; });
-  if (!selected) {
-    selected = COLOR_OPTIONS.find(function(color) { return color && color.value !== "custom"; }) || DEFAULT_COLOR;
-    if (selected && selected.value !== undefined) select.value = selected.value;
-  }
+  const selected = COLOR_OPTIONS.find(function(color) { return color.value === select.value; });
   const isCustom = selected && selected.value === "custom";
   if (customRow) customRow.hidden = !isCustom;
-  const customValue = customInput && customInput.value ? customInput.value : "#e9e7df";
-  const colorValue = isCustom ? customValue : (selected.value || "#e0deda");
-  const renderValue = isCustom ? customValue : (selected.renderValue || selected.value || "#e0deda");
-  const colorLabel = isCustom ? "Custom (" + colorValue.toUpperCase() + ")" : (selected.label || "Color");
+  const colorValue = isCustom ? customInput.value : selected.value;
+  const renderValue = isCustom ? customInput.value : (selected.renderValue || selected.value);
+  const colorLabel = isCustom ? "Custom (" + colorValue.toUpperCase() + ")" : selected.label;
   if (target === "face") {
     state.faceColor = renderValue;
     state.faceColorLabel = colorLabel;
@@ -787,15 +556,15 @@ function updatePricing() {
   });
   state.priceBreakdown = breakdown;
   els.priceTotal.textContent = formatMoney(breakdown.totalPrice);
-  els.priceMessage.textContent = PRICE_CARD_MESSAGE;
+  els.priceMessage.textContent = "Live estimate before tax, shipping, or final design review.";
   const rows = [
-    [PRICE_LABELS.volume, toFixedSmart(breakdown.volume, 2) + " cu in"],
-    [PRICE_LABELS.size, formatMoney(breakdown.sizePrice)]
+    ["Volume", toFixedSmart(breakdown.volume, 2) + " cu in"],
+    ["Size price", formatMoney(breakdown.sizePrice)]
   ];
-  if (breakdown.dualColorAddon > 0) rows.push([PRICE_LABELS.dualColor, formatMoney(breakdown.dualColorAddon)]);
-  if (breakdown.premiumColorAddon > 0) rows.push([PRICE_LABELS.premiumColor, formatMoney(breakdown.premiumColorAddon)]);
-  if (breakdown.oversizeAddon > 0) rows.push([PRICE_LABELS.oversize, formatMoney(breakdown.oversizeAddon)]);
-  if (breakdown.oversizedShippingAddon > 0) rows.push(["Shipping add-on", formatMoney(breakdown.oversizedShippingAddon)]);
+  if (breakdown.dualColorAddon > 0) rows.push(["Dual color", formatMoney(breakdown.dualColorAddon)]);
+  if (breakdown.premiumColorAddon > 0) rows.push(["Premium color", formatMoney(breakdown.premiumColorAddon)]);
+  if (breakdown.oversizeAddon > 0) rows.push(["Oversized fee", formatMoney(breakdown.oversizeAddon)]);
+  if (breakdown.oversizedShippingAddon > 0) rows.push(["Oversized shipping", formatMoney(breakdown.oversizedShippingAddon)]);
   els.priceBreakdown.innerHTML = rows.map(function(row) { return "<div><span>" + row[0] + "</span><strong>" + row[1] + "</strong></div>"; }).join("");
 }
 
@@ -836,7 +605,6 @@ function readDimensions() {
     if (els.priceTotal) els.priceTotal.textContent = "--";
     if (els.priceMessage) els.priceMessage.textContent = overLimit ? "Reduce dimensions to 16 in or less to calculate price." : "Enter positive width, height, and depth to calculate price.";
     if (els.priceBreakdown) els.priceBreakdown.innerHTML = "";
-    updateFitCheck();
   }
   if (!valid) return false;
   state.widthMm = values[0]; state.heightMm = values[1]; state.depthMm = values[2]; updateOversizeWarning(); return true;
@@ -857,10 +625,6 @@ function updateDimensionThresholdIndicators() {
   });
 }
 
-function formatTemplate(template, values) {
-  return String(template || "").replace(/\{(threshold|fee|shipping|max)\}/g, function(match, key) { return values[key] !== undefined ? values[key] : match; });
-}
-
 function updateOversizeWarning(values) {
   const source = values || [state.widthMm, state.heightMm, state.depthMm];
   const dims = [
@@ -876,7 +640,7 @@ function updateOversizeWarning(values) {
   }
   const overLimit = oversized.some(function(item) { return item[1] > MAX_DIMENSION_IN; });
   els.oversizeWarning.hidden = false;
-  els.oversizeWarning.textContent = "Oversized cover notice: " + oversized.map(function(item) { return item[0] + " is " + toFixedSmart(item[1], 2) + " in"; }).join(", ") + ". " + (overLimit ? "Dimensions over " + MAX_DIMENSION_IN + " in are above the maximum for this designer." : formatTemplate(OVERSIZE_WARNING_TEMPLATE, { threshold: OVERSIZE_THRESHOLD_IN, fee: OVERSIZE_FEE_ADDON, shipping: OVERSIZE_SHIPPING_ADDON, max: MAX_DIMENSION_IN }));
+  els.oversizeWarning.textContent = "Oversized cover notice: " + oversized.map(function(item) { return item[0] + " is " + toFixedSmart(item[1], 2) + " in"; }).join(", ") + ". " + (overLimit ? "Dimensions over 16 in are above the maximum for this designer." : "A $10 oversized fee and $5 additional shipping charge are included in the estimate.");
 }
 
 function readBellDimensions() {
@@ -907,19 +671,19 @@ function readBellDimensions() {
     return true;
   }
   if (!hasDiameter) {
-    els.bellError.textContent = BELL_VALIDATION_TEXT;
+    els.bellError.textContent = "Enter the bell diameter to preview the bottom cutout.";
     els.bellCutoutReadout.textContent = "Incomplete bell measurements";
     return false;
   }
   if (!hasProjection) {
-    els.bellError.textContent = BELL_VALIDATION_TEXT;
+    els.bellError.textContent = "Enter the bell face from wall to preview the bottom cutout.";
     els.bellCutoutReadout.textContent = "Incomplete bell measurements";
     return false;
   }
   if (state.bellProjectionMm < state.bellDepthMm) {
     const unit = els.bellUnit.value === "mm" ? "mm" : "in";
     const minValue = unit === "mm" ? state.bellDepthMm : state.bellDepthMm / IN_TO_MM;
-    els.bellError.textContent = BELL_VALIDATION_TEXT + " Minimum: " + toFixedSmart(minValue, unit === "mm" ? 1 : 3) + " " + unit + ".";
+    els.bellError.textContent = "Bell face from wall must be at least the bell diameter: " + toFixedSmart(minValue, unit === "mm" ? 1 : 3) + " " + unit + ".";
     els.bellCutoutReadout.textContent = "Bell face measurement too small";
     return false;
   }
@@ -929,7 +693,7 @@ function readBellDimensions() {
   // bottom cutout must extend into the cover. Add a 4 mm front buffer because the
   // wall side is open against the customer's wall.
   const requiredCutoutDepth = state.bellProjectionMm + clearance;
-  const requiredCoverWidth = requiredCutoutWidth + WALL_MM * 4;
+  const requiredCoverWidth = requiredCutoutWidth + state.wallThicknessMm * 4;
   if (state.widthMm < requiredCoverWidth) {
     const minWidthIn = toFixedSmart(requiredCoverWidth / IN_TO_MM, 3);
     els.bellError.textContent = "Overall cover width must be at least " + minWidthIn + " in / " + toFixedSmart(requiredCoverWidth, 1) + " mm to fit " + state.bellCount + " bell cutout" + (state.bellCount === 1 ? "" : "s") + " with 4 mm clearance.";
@@ -973,8 +737,11 @@ function buildBellCutouts(count, diameter, spacing, cutoutWidth) {
 
 function buildCover() {
   clearGroup(coverGroup); clearGroup(labelGroup);
-  const w = state.widthMm * MODEL_SCALE, h = state.heightMm * MODEL_SCALE, d = state.depthMm * MODEL_SCALE;
-  const wall = WALL_MM * MODEL_SCALE;
+  const wallMm = state.wallThicknessMm || DEFAULT_WALL_MM;
+  const faceThicknessMm = state.faceThicknessMm || DEFAULT_FACE_THICKNESS_MM;
+  const w = (state.widthMm + wallMm * 2) * MODEL_SCALE, h = (state.heightMm + wallMm * 2) * MODEL_SCALE, d = (state.depthMm + faceThicknessMm) * MODEL_SCALE;
+  const wall = wallMm * MODEL_SCALE;
+  const faceThickness = faceThicknessMm * MODEL_SCALE;
   const radius = CORNER_FILLET_MM * MODEL_SCALE;
   const faceInset = FACE_INSET_MM * MODEL_SCALE;
   const chamferDepth = CHAMFER_DEPTH_MM * MODEL_SCALE;
@@ -1029,8 +796,8 @@ function buildCover() {
 
   const faceShape = roundedRectShape(faceW, faceH, faceRadius);
   addPatternHoles(faceShape, state.frontPattern, faceW, faceH);
-  const faceGeometry = new THREE.ExtrudeGeometry(faceShape, { depth: wall, bevelEnabled: false, curveSegments: 18 });
-  faceGeometry.translate(0, 0, frontZ - wall);
+  const faceGeometry = new THREE.ExtrudeGeometry(faceShape, { depth: faceThickness, bevelEnabled: false, curveSegments: 18 });
+  faceGeometry.translate(0, 0, frontZ - faceThickness);
   addMeshWithEdges(faceGeometry, faceMaterial, edgeMaterial);
   if (state.showDimensions) drawDimensionGuides(w, h, d);
   frameCamera(w, h, d);
@@ -1041,7 +808,7 @@ function hasBellCutout() {
 }
 
 function hasPatternedSides() {
-  return getSidePatternSvgData() !== null;
+  return state.sidePattern === "Lines" || getSidePatternSvgData() !== null;
 }
 
 function createBottomWallSegmentGeometries(width, height, wall, wallDepth, backZ, cutouts) {
@@ -1224,18 +991,42 @@ function getSidePatternSvgData() {
   if (state.sidePattern === "Squiggles") return window.SIDE_SQUIGGLES_SVG || null;
   if (state.sidePattern === "Footballs") return window.SIDE_FOOTBALLS_SVG || null;
   if (state.sidePattern === "Hex Gems") return window.SIDE_HEX_GEMS_SVG || null;
-  const customPattern = CUSTOM_SIDE_PATTERN_DATA.find(function(pattern) { return pattern.name === state.sidePattern; });
-  return customPattern || null;
+  return null;
 }
 
-
 function addSidePatternHolesToShape(shape, wallDepth, sideH, backZ) {
-  if (getSideLayoutIssue()) return false;
+  if (state.sideShapeCount < 1) return true;
+  if (state.sidePattern === "Lines") {
+    const margin = 5 * MODEL_SCALE;
+    const length = Math.min(state.sideShapeSizeMm * MODEL_SCALE, wallDepth - 2 * margin);
+    const thickness = 3.5 * MODEL_SCALE;
+    const available = sideH - 20 * MODEL_SCALE;
+    if (length < thickness || available < thickness) return true;
+    // Clear gap grows with cover depth to keep the webs between slots wider.
+    const gap = Math.max(10, state.depthMm / 5, state.sideShapeSpacingMm) * MODEL_SCALE;
+    const count = state.sideShapeCount || 5;
+    const pitch = thickness + gap;
+    const centerZ = backZ + wallDepth / 2;
+    const radius = thickness / 2, end = length / 2 - radius;
+    for (let i = 0; i < count; i++) {
+      const y = (i - (count - 1) / 2) * pitch;
+      const hole = new THREE.Path();
+      hole.moveTo(centerZ - end, y - radius);
+      hole.lineTo(centerZ + end, y - radius);
+      hole.absarc(centerZ + end, y, radius, -Math.PI / 2, Math.PI / 2, false);
+      hole.lineTo(centerZ - end, y + radius);
+      hole.absarc(centerZ - end, y, radius, Math.PI / 2, 3 * Math.PI / 2, false);
+      hole.closePath();
+      shape.holes.push(ensureClockwiseHolePath(hole));
+    }
+    return true;
+  }
   const data = getSidePatternSvgData();
   if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return false;
+  const viewX = data.viewBox[0], viewY = data.viewBox[1], viewW = data.viewBox[2], viewH = data.viewBox[3];
   const count = state.sideShapeCount || 5;
   const size = (state.sideShapeSizeMm || 30) * MODEL_SCALE;
-  const gap = (state.sideShapeSpacingMm || 10) * MODEL_SCALE;
+  const spacing = (state.sideShapeHeightMm + Math.max(10, state.depthMm / 5, state.sideShapeSpacingMm)) * MODEL_SCALE;
   const centerZ = backZ + wallDepth * 0.5;
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "0");
@@ -1252,16 +1043,16 @@ function addSidePatternHolesToShape(shape, wallDepth, sideH, backZ) {
     pathElement.setAttribute("d", pathData);
     svg.appendChild(pathElement);
     const total = pathElement.getTotalLength();
-    const box = getSvgPathBox(pathElement, data.viewBox[0], data.viewBox[1], data.viewBox[2], data.viewBox[3]);
+    const box = getSvgPathBox(pathElement, viewX, viewY, viewW, viewH);
     if (!Number.isFinite(total) || total <= 0 || !box) return false;
     const shapeW = Math.max(box.width, 1);
     const shapeH = Math.max(box.height, 1);
-    const requestedScale = size / shapeW;
-    const maxZHalf = wallDepth * 0.39;
-    const finalScale = Math.min(requestedScale, (maxZHalf * 2) / shapeW);
-    const centerSpacing = (shapeH * finalScale) + gap;
+    const scale = size / shapeW;
+    const maxZHalf = Math.max(0, wallDepth / 2 - 5 * MODEL_SCALE);
+    const finalScale = Math.min(scale, (maxZHalf * 2) / shapeW);
     const steps = Math.max(18, Math.min(96, Math.ceil(total / 1.8)));
-    sideShapeCenters(count, centerSpacing).forEach(function(centerY) {
+    const centers = sideShapeCenters(count, spacing);
+    centers.forEach(function(centerY) {
       const hole = new THREE.Path();
       for (let i = 0; i <= steps; i++) {
         const point = pathElement.getPointAtLength(total * (i / steps));
@@ -1310,9 +1101,12 @@ function getSvgPathBox(pathElement, fallbackX, fallbackY, fallbackW, fallbackH) 
   return { x: fallbackX, y: fallbackY, width: fallbackW, height: fallbackH, centerX: fallbackX + fallbackW / 2, centerY: fallbackY + fallbackH / 2 };
 }
 
+
 function getSidePatternShapeMetrics() {
+  if (state.sidePattern === "Lines") return { widthMm: state.sideShapeSizeMm, heightMm: 3.5 };
   const data = getSidePatternSvgData();
   if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return null;
+  if (sidePatternMetricCache.has(data)) return { widthMm: state.sideShapeSizeMm, heightMm: state.sideShapeSizeMm * sidePatternMetricCache.get(data) };
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "0");
   svg.setAttribute("height", "0");
@@ -1329,7 +1123,9 @@ function getSidePatternShapeMetrics() {
     const box = getSvgPathBox(pathElement, data.viewBox[0], data.viewBox[1], data.viewBox[2], data.viewBox[3]);
     if (!box) return null;
     const widthMm = state.sideShapeSizeMm || 30;
-    return { widthMm: widthMm, heightMm: widthMm * (box.height / Math.max(box.width, 1)) };
+    const ratio = box.height / Math.max(box.width, 1);
+    sidePatternMetricCache.set(data, ratio);
+    return { widthMm: widthMm, heightMm: widthMm * ratio };
   } finally {
     svg.remove();
   }
@@ -1367,9 +1163,8 @@ function addSideDiamondSvgCutouts(group, wallDepth, sideH, backZ, wallMaterial, 
   const data = window.SIDE_DIAMONDS_SVG;
   if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return false;
   const viewX = data.viewBox[0], viewY = data.viewBox[1], viewW = data.viewBox[2], viewH = data.viewBox[3];
-  const scale = getPatternScale("side", "Diamonds");
-  const usableZ = wallDepth * 0.594 * scale.x;
-  const usableY = sideH * 0.616 * scale.y;
+  const usableZ = wallDepth * 0.594;
+  const usableY = sideH * 0.616;
   const centerZ = backZ + wallDepth * 0.5;
   const panelShape = new THREE.Shape();
   panelShape.moveTo(backZ, -sideH / 2);
@@ -1673,11 +1468,8 @@ function addPatternHoles(faceShape, pattern, w, h) {
   const marginH = 5 * MODEL_SCALE;
   const usableW = Math.max(w - marginW * 2, w * 0.6);
   const usableH = Math.max(h - marginH * 2, h * 0.6);
-  const patternScale = getPatternScale("front", pattern);
-  const ratioScaleX = Math.max(0.78, Math.min(1.25, currentRatio / baseRatio));
-  const ratioScaleY = Math.max(0.82, Math.min(1.18, 1 / Math.sqrt(ratioScaleX)));
-  const sx = ratioScaleX * patternScale.x;
-  const sy = ratioScaleY * patternScale.y;
+  const sx = Math.max(0.78, Math.min(1.25, currentRatio / baseRatio));
+  const sy = Math.max(0.82, Math.min(1.18, 1 / Math.sqrt(sx)));
   function push(path) { faceShape.holes.push(ensureClockwiseHolePath(path)); }
   function grid(cols, rows, fn) {
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -1725,63 +1517,89 @@ function addPatternHoles(faceShape, pattern, w, h) {
       push(stripPath(cw * 0.72, Math.min(cw, ch) * 0.06, x + cw * 0.16, y, -Math.PI / 4));
     });
   }
-  else {
-    addNamedSvgFacePatternHoles(faceShape, pattern, w, h);
-  }
 }
 
 function addAnglesSvgPatternHoles(faceShape, faceW, faceH) {
-  return addNamedSvgFacePatternHoles(faceShape, "Angles", faceW, faceH);
+  const data = window.ANGLES_PATTERN_SVG;
+  if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return false;
+  return addSvgFacePatternHoles(faceShape, data, faceW, faceH);
 }
 
 function addDiamondsSvgPatternHoles(faceShape, faceW, faceH) {
-  return addNamedSvgFacePatternHoles(faceShape, "Diamonds", faceW, faceH);
+  const data = window.DIAMONDS_PATTERN_SVG;
+  if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return false;
+  return addSvgFacePatternHoles(faceShape, data, faceW, faceH);
 }
 
 function addFlowersSvgPatternHoles(faceShape, faceW, faceH) {
-  return addNamedSvgFacePatternHoles(faceShape, "Flowers", faceW, faceH);
+  const data = window.FLOWERS_PATTERN_SVG;
+  if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return false;
+  return addSvgFacePatternHoles(faceShape, data, faceW, faceH);
 }
 
 function addLinesSvgPatternHoles(faceShape, faceW, faceH) {
-  return addNamedSvgFacePatternHoles(faceShape, "Lines", faceW, faceH);
+  // Fixed 18 mm side borders and 15 mm top/bottom borders; rounded slots.
+  const margin = 18 * MODEL_SCALE, width = 6 * MODEL_SCALE;
+  const available = faceW - 2 * margin, height = faceH - 2 * 15 * MODEL_SCALE;
+  if (available < width || height < width) return true;
+  const count = Math.max(1, Math.round((available - width) / (15 * MODEL_SCALE)) + 1);
+  const pitch = count > 1 ? (available - width) / (count - 1) : 0;
+  const radius = width / 2, end = height / 2 - radius;
+  for (let i = 0; i < count; i++) {
+    const x = (i - (count - 1) / 2) * pitch;
+    const path = new THREE.Path();
+    path.moveTo(x + radius, -end);
+    path.lineTo(x + radius, end);
+    path.absarc(x, end, radius, 0, Math.PI, false);
+    path.lineTo(x - radius, -end);
+    path.absarc(x, -end, radius, Math.PI, Math.PI * 2, false);
+    path.closePath();
+    faceShape.holes.push(ensureClockwiseHolePath(path));
+  }
+  return true;
 }
 
 function addPetalsSvgPatternHoles(faceShape, faceW, faceH) {
-  return addNamedSvgFacePatternHoles(faceShape, "Petals", faceW, faceH);
+  const data = window.PETALS_PATTERN_SVG;
+  if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return false;
+  return addSvgFacePatternHoles(faceShape, data, faceW, faceH);
 }
 
 function addSquaresSvgPatternHoles(faceShape, faceW, faceH) {
-  return addNamedSvgFacePatternHoles(faceShape, "Squares", faceW, faceH);
+  const data = window.SQUARES_PATTERN_SVG;
+  if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return false;
+  return addSvgFacePatternHoles(faceShape, data, faceW, faceH);
 }
 
 function addStarsSvgPatternHoles(faceShape, faceW, faceH) {
-  return addNamedSvgFacePatternHoles(faceShape, "Stars", faceW, faceH);
+  const data = window.STARS_PATTERN_SVG;
+  if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return false;
+  return addSvgFacePatternHoles(faceShape, data, faceW, faceH);
 }
 
 function addTrianglesSvgPatternHoles(faceShape, faceW, faceH) {
-  return addNamedSvgFacePatternHoles(faceShape, "Triangles", faceW, faceH);
+  const data = window.TRIANGLES_PATTERN_SVG;
+  if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return false;
+  return addSvgFacePatternHoles(faceShape, data, faceW, faceH);
 }
 
 function addWedgeBloomSvgPatternHoles(faceShape, faceW, faceH) {
-  return addNamedSvgFacePatternHoles(faceShape, "Wedge Bloom", faceW, faceH);
+  const data = window.WEDGE_BLOOM_PATTERN_SVG;
+  if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return false;
+  return addSvgFacePatternHoles(faceShape, data, faceW, faceH);
 }
 
 function addArchesSvgPatternHoles(faceShape, faceW, faceH) {
-  return addNamedSvgFacePatternHoles(faceShape, "Arches", faceW, faceH);
-}
-
-function addNamedSvgFacePatternHoles(faceShape, patternName, faceW, faceH) {
-  const data = getFacePatternSvgData(patternName);
+  const data = window.ARCHES_PATTERN_SVG;
   if (!data || !Array.isArray(data.paths) || !Array.isArray(data.viewBox)) return false;
-  return addSvgFacePatternHoles(faceShape, data, faceW, faceH, patternName);
+  return addSvgFacePatternHoles(faceShape, data, faceW, faceH);
 }
 
-function addSvgFacePatternHoles(faceShape, data, faceW, faceH, patternName) {
-  const fallbackViewBox = data.viewBox;
-  const scale = getPatternScale("front", patternName || state.frontPattern);
-  const margin = Math.max(0, Number(PATTERN_SAFE_MARGINS.front) || 0) * MODEL_SCALE;
-  const usableW = Math.max(faceW - margin * 2, faceW * 0.75) * scale.x;
-  const usableH = Math.max(faceH - margin * 2, faceH * 0.75) * scale.y;
+function addSvgFacePatternHoles(faceShape, data, faceW, faceH) {
+  const viewX = data.viewBox[0], viewY = data.viewBox[1], viewW = data.viewBox[2], viewH = data.viewBox[3];
+  const margin = 2.5 * MODEL_SCALE;
+  const usableW = Math.max(faceW - margin * 2, faceW * 0.75);
+  const usableH = Math.max(faceH - margin * 2, faceH * 0.75);
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "0");
   svg.setAttribute("height", "0");
@@ -1791,34 +1609,26 @@ function addSvgFacePatternHoles(faceShape, data, faceW, faceH, patternName) {
   document.body.appendChild(svg);
 
   try {
-    const pathElements = [];
-    data.paths.forEach(function(pathData) {
+    const addSvgPath = function(pathData, offsetX, offsetY) {
       const pathElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
       pathElement.setAttribute("d", pathData);
       svg.appendChild(pathElement);
-      pathElements.push(pathElement);
-    });
-    const bounds = shouldTrimSvgPatternToArtwork(data) ? getSvgArtworkBounds(pathElements, fallbackViewBox) : { x: fallbackViewBox[0], y: fallbackViewBox[1], w: fallbackViewBox[2], h: fallbackViewBox[3] };
-    pathElements.forEach(function(pathElement) {
       const total = pathElement.getTotalLength();
       if (!Number.isFinite(total) || total <= 0) return;
       const steps = Math.max(18, Math.min(240, Math.ceil(total / 3)));
       const path = new THREE.Path();
       for (let i = 0; i <= steps; i++) {
         const point = pathElement.getPointAtLength(total * (i / steps));
-        const localX = ((point.x - bounds.x) / bounds.w - 0.5) * usableW;
-        const localY = (0.5 - (point.y - bounds.y) / bounds.h) * usableH;
-        const cr = Math.cos(scale.rotation || 0), sr = Math.sin(scale.rotation || 0);
-        const baseW = Math.max(faceW - margin * 2, faceW * 0.75);
-        const baseH = Math.max(faceH - margin * 2, faceH * 0.75);
-        const x = localX * cr - localY * sr + scale.offsetX * baseW;
-        const y = localX * sr + localY * cr + scale.offsetY * baseH;
+        const x = (((point.x + (offsetX || 0)) - viewX) / viewW - 0.5) * usableW;
+        const y = (0.5 - ((point.y + (offsetY || 0)) - viewY) / viewH) * usableH;
         if (i === 0) path.moveTo(x, y);
         else path.lineTo(x, y);
       }
       path.closePath();
       faceShape.holes.push(ensureClockwiseHolePath(path));
-    });
+    };
+
+    data.paths.forEach(function(pathData) { addSvgPath(pathData); });
   } finally {
     svg.remove();
   }
@@ -1977,12 +1787,11 @@ function diamondShape(width, height) {
 
 function drawDimensionGuides(w, h, d) {
   const widthY = h / 2 + 0.34;
-  // Keep the height label on the right side so it does not cover side-pattern previews.
-  const heightX = w / 2 + 0.42;
+  const heightX = -w / 2 - 0.38;
   const depthX = w / 2 - 0.12;
   const depthY = h / 2 + 0.32;
   labelGroup.add(makeLabel("W " + toFixedSmart(state.widthMm / IN_TO_MM, 2) + " in", toFixedSmart(state.widthMm, 1) + " mm", 0, widthY, d / 2));
-  labelGroup.add(makeLabel("H " + toFixedSmart(state.heightMm / IN_TO_MM, 2) + " in", toFixedSmart(state.heightMm, 1) + " mm", heightX, 0, d / 2));
+  labelGroup.add(makeLabel("H " + toFixedSmart(state.heightMm / IN_TO_MM, 2) + " in", toFixedSmart(state.heightMm, 1) + " mm", heightX - 0.25, 0, d / 2));
   labelGroup.add(makeLabel("D " + toFixedSmart(state.depthMm / IN_TO_MM, 2) + " in", toFixedSmart(state.depthMm, 1) + " mm", depthX, depthY, 0));
 }
 
@@ -2084,9 +1893,12 @@ function buildConfiguredCoverPayload() {
     widthMm: toFixedSmart(state.widthMm, 1),
     heightMm: toFixedSmart(state.heightMm, 1),
     depthMm: toFixedSmart(state.depthMm, 1),
+    wallThicknessMm: toFixedSmart(state.wallThicknessMm, 1),
+    faceThicknessMm: toFixedSmart(state.faceThicknessMm, 1),
     frontPattern: state.frontPattern,
     sidePattern: state.sidePattern,
     sideShapeCount: state.sideShapeCount,
+    sideShapeSizePercent: state.sideShapeSizePercent,
     sideShapeSizeMm: toFixedSmart(state.sideShapeSizeMm, 1),
     sideShapeSpacingMm: toFixedSmart(state.sideShapeSpacingMm, 1),
     sideShapeHeightMm: toFixedSmart(state.sideShapeHeightMm, 1),
@@ -2114,7 +1926,6 @@ function submitConfiguredCoverToCart() {
     showSummary();
     return;
   }
-  if (!validateSidePatternLayout(true)) return;
   const payload = buildConfiguredCoverPayload();
   const submitButton = els.form.querySelector('[type="submit"]');
   const originalText = submitButton ? submitButton.textContent : "";
@@ -2168,11 +1979,11 @@ function submitConfiguredCoverToCart() {
 function showSummary() { // Future submission behavior can be added here: send this payload to email, WooCommerce, Shopify, a serverless function, or a custom backend endpoint.
   const colorMode = hasDistinctDualColors() ? "Two-tone" : "Single color";
   updatePricing();
-  const payload = { width: toFixedSmart(state.widthMm / IN_TO_MM, 3) + " inches / " + toFixedSmart(state.widthMm, 1) + " mm", height: toFixedSmart(state.heightMm / IN_TO_MM, 3) + " inches / " + toFixedSmart(state.heightMm, 1) + " mm", depth: toFixedSmart(state.depthMm / IN_TO_MM, 3) + " inches / " + toFixedSmart(state.depthMm, 1) + " mm", wall: WALL_MM + " mm", faceInset: FACE_INSET_MM + " mm",
+  const payload = { width: toFixedSmart(state.widthMm / IN_TO_MM, 3) + " inches / " + toFixedSmart(state.widthMm, 1) + " mm", height: toFixedSmart(state.heightMm / IN_TO_MM, 3) + " inches / " + toFixedSmart(state.heightMm, 1) + " mm", depth: toFixedSmart(state.depthMm / IN_TO_MM, 3) + " inches / " + toFixedSmart(state.depthMm, 1) + " mm", wall: toFixedSmart(state.wallThicknessMm, 1) + " mm", faceThickness: toFixedSmart(state.faceThicknessMm, 1) + " mm", faceInset: FACE_INSET_MM + " mm",
     chamferDepth: CHAMFER_DEPTH_MM + " mm", cornerFillet: CORNER_FILLET_MM + " mm", frontPattern: state.frontPattern, sidePattern: state.sidePattern, colorMode: colorMode, faceColor: state.faceColorLabel,
     wallColor: state.wallColorLabel, estimatedPrice: state.priceBreakdown ? formatMoney(state.priceBreakdown.totalPrice) : "Not calculated", bellCutout: state.bellCutoutWidthMm > 0 ? toFixedSmart(state.bellCutoutWidthMm / IN_TO_MM, 3) + " in W x " + toFixedSmart(state.bellCutoutDepthMm / IN_TO_MM, 3) + " in D; includes 4 mm buffer" : "No bell cutout",
     notes: els.notes.value.trim() || "No notes provided" };
-  els.summaryContent.innerHTML = '<div class="summary-grid"><div><strong>Width</strong>' + payload.width + '</div><div><strong>Height</strong>' + payload.height + '</div><div><strong>Depth</strong>' + payload.depth + '</div><div><strong>Estimated price</strong>' + payload.estimatedPrice + '</div><div><strong>Wall</strong>' + payload.wall + '</div><div><strong>Face inset</strong>' + payload.faceInset + '</div><div><strong>Chamfer depth</strong>' + payload.chamferDepth + '</div><div><strong>Corner fillet</strong>' + payload.cornerFillet + '</div><div><strong>Front pattern</strong>' + payload.frontPattern + '</div><div><strong>Side pattern</strong>' + payload.sidePattern + '</div><div><strong>Color mode</strong>' + payload.colorMode + '</div><div><strong>Face / cover color</strong>' + payload.faceColor + '</div><div><strong>Wall color</strong>' + payload.wallColor + '</div><div><strong>Bell cutout</strong>' + payload.bellCutout + '</div><div><strong>Notes</strong>' + escapeHtml(payload.notes) + '</div></div>';
+  els.summaryContent.innerHTML = '<div class="summary-grid"><div><strong>Width</strong>' + payload.width + '</div><div><strong>Height</strong>' + payload.height + '</div><div><strong>Depth</strong>' + payload.depth + '</div><div><strong>Estimated price</strong>' + payload.estimatedPrice + '</div><div><strong>Wall</strong>' + payload.wall + '</div><div><strong>Face thickness</strong>' + payload.faceThickness + '</div><div><strong>Face inset</strong>' + payload.faceInset + '</div><div><strong>Chamfer depth</strong>' + payload.chamferDepth + '</div><div><strong>Corner fillet</strong>' + payload.cornerFillet + '</div><div><strong>Front pattern</strong>' + payload.frontPattern + '</div><div><strong>Side pattern</strong>' + payload.sidePattern + '</div><div><strong>Color mode</strong>' + payload.colorMode + '</div><div><strong>Face / cover color</strong>' + payload.faceColor + '</div><div><strong>Wall color</strong>' + payload.wallColor + '</div><div><strong>Bell cutout</strong>' + payload.bellCutout + '</div><div><strong>Notes</strong>' + escapeHtml(payload.notes) + '</div></div>';
   els.summaryCard.hidden = false; els.summaryCard.scrollIntoView({ behavior: "smooth", block: "nearest" }); console.info("Prepared quote request payload:", payload);
 }
 function cancelCameraTransition() {
@@ -2180,54 +1991,6 @@ function cancelCameraTransition() {
     window.cancelAnimationFrame(cameraTransitionFrame);
     cameraTransitionFrame = null;
   }
-}
-function cancelDimensionAutoFit() {
-  if (dimensionFitTimer) {
-    window.clearTimeout(dimensionFitTimer);
-    dimensionFitTimer = null;
-  }
-}
-function getDimensionFitSignature() {
-  if (!Number.isFinite(state.widthMm) || !Number.isFinite(state.heightMm) || !Number.isFinite(state.depthMm)) return "";
-  return [
-    Math.round(state.widthMm * 10) / 10,
-    Math.round(state.heightMm * 10) / 10,
-    Math.round(state.depthMm * 10) / 10
-  ].join("x");
-}
-function requestDimensionAutoFit() {
-  if (!isAutoViewEnabled()) return;
-  const signature = getDimensionFitSignature();
-  if (!signature || signature === lastDimensionFitSignature) return;
-  lastDimensionFitSignature = signature;
-  cancelDimensionAutoFit();
-  dimensionFitTimer = window.setTimeout(function() {
-    dimensionFitTimer = null;
-    fitCameraToCurrentCover();
-  }, DIMENSION_AUTO_FIT_DELAY_MS);
-}
-function fitCameraToCurrentCover() {
-  if (!camera || !controls || !els.canvas) return;
-  const w = state.widthMm * MODEL_SCALE;
-  const h = state.heightMm * MODEL_SCALE;
-  const d = state.depthMm * MODEL_SCALE;
-  if (!Number.isFinite(w) || !Number.isFinite(h) || !Number.isFinite(d) || w <= 0 || h <= 0 || d <= 0) return;
-
-  const target = new THREE.Vector3(0, 0, d * 0.12);
-  const direction = camera.position.clone().sub(controls.target);
-  if (direction.lengthSq() < 0.001) direction.set(DEFAULT_CAMERA_POSITION.x, DEFAULT_CAMERA_POSITION.y, DEFAULT_CAMERA_POSITION.z);
-  direction.normalize();
-
-  const aspect = Math.max(0.2, (els.canvas.clientWidth || 1) / (els.canvas.clientHeight || 1));
-  const verticalFov = THREE.MathUtils.degToRad(camera.fov);
-  const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * aspect);
-  const radius = Math.sqrt(w * w + h * h + d * d) * 0.5;
-  const fitVertical = radius / Math.sin(verticalFov / 2);
-  const fitHorizontal = radius / Math.sin(horizontalFov / 2);
-  const distance = Math.max(5.8, Math.max(fitVertical, fitHorizontal) * 0.98);
-  const position = target.clone().add(direction.multiplyScalar(distance));
-
-  animateCameraTo(position, target, new THREE.Vector3(0, 1, 0), AUTO_VIEW_DURATION_MS);
 }
 function resetCameraPosition() {
   cancelCameraTransition();
@@ -2278,36 +2041,28 @@ function snapCameraToFrontView() {
   const w = state.widthMm * MODEL_SCALE, h = state.heightMm * MODEL_SCALE, d = state.depthMm * MODEL_SCALE;
   const largest = Math.max(w, h, d);
   const distance = Math.max(7, largest * 2.15);
-  const faceAngle = THREE.MathUtils.degToRad(settingNumberFromObject(CAMERA_ANGLES, 'face', 0));
-  const position = new THREE.Vector3(Math.sin(faceAngle) * distance, 0, d / 2 + Math.cos(faceAngle) * distance);
+  const position = new THREE.Vector3(0, 0, d / 2 + distance);
   const target = new THREE.Vector3(0, 0, d / 2 - Math.min(d * 0.28, largest * 0.15));
-  animateCameraTo(position, target, new THREE.Vector3(0, 1, 0), AUTO_VIEW_DURATION_MS);
+  animateCameraTo(position, target, new THREE.Vector3(0, 1, 0), 700);
 }
 function snapCameraToLeftSideView() {
   const w = state.widthMm * MODEL_SCALE, h = state.heightMm * MODEL_SCALE, d = state.depthMm * MODEL_SCALE;
   const largest = Math.max(w, h, d);
   const distance = Math.max(7, largest * 2.15);
-  const angle = THREE.MathUtils.degToRad(settingNumberFromObject(CAMERA_ANGLES, 'side', 70));
+  const angle = THREE.MathUtils.degToRad(70);
   const targetX = -w * 0.16;
   const targetZ = d * 0.08;
   const position = new THREE.Vector3(targetX - Math.sin(angle) * distance, 0, targetZ + Math.cos(angle) * distance);
   const target = new THREE.Vector3(targetX, 0, targetZ);
-  animateCameraTo(position, target, new THREE.Vector3(0, 1, 0), AUTO_VIEW_DURATION_MS);
+  animateCameraTo(position, target, new THREE.Vector3(0, 1, 0), 700);
 }
 function snapCameraToColorView() {
   animateCameraTo(
-    cameraPositionFromAngle(settingNumberFromObject(CAMERA_ANGLES, 'color', -38)),
+    new THREE.Vector3(DEFAULT_CAMERA_POSITION.x, DEFAULT_CAMERA_POSITION.y, DEFAULT_CAMERA_POSITION.z),
     new THREE.Vector3(0, 0, 0),
     new THREE.Vector3(0, 1, 0),
-    AUTO_VIEW_DURATION_MS
+    700
   );
-}
-function cameraPositionFromAngle(angleDeg) {
-  const w = state.widthMm * MODEL_SCALE, h = state.heightMm * MODEL_SCALE, d = state.depthMm * MODEL_SCALE;
-  const largest = Math.max(w, h, d);
-  const distance = Math.max(7, largest * 2.15);
-  const angle = THREE.MathUtils.degToRad(angleDeg);
-  return new THREE.Vector3(Math.sin(angle) * distance, Math.max(2.5, largest * 0.72), Math.cos(angle) * distance + d * 0.1);
 }
 function snapCameraToBottomView() {
   const w = state.widthMm * MODEL_SCALE, h = state.heightMm * MODEL_SCALE, d = state.depthMm * MODEL_SCALE;
@@ -2315,15 +2070,7 @@ function snapCameraToBottomView() {
   const distance = Math.max(6, largest * 1.55);
   const position = new THREE.Vector3(0, -distance * 0.58, d / 2 + distance * 0.82);
   const target = new THREE.Vector3(0, -h * 0.34, 0);
-  animateCameraTo(position, target, new THREE.Vector3(0, 1, 0), AUTO_VIEW_DURATION_MS);
-}
-function snapCameraToInsideView() {
-  const w = state.widthMm * MODEL_SCALE, h = state.heightMm * MODEL_SCALE, d = state.depthMm * MODEL_SCALE;
-  const largest = Math.max(w, h, d);
-  const distance = Math.max(6, largest * 1.65);
-  const position = new THREE.Vector3(-w * 0.42, h * 0.18, -distance);
-  const target = new THREE.Vector3(0, 0, d * 0.15);
-  animateCameraTo(position, target, new THREE.Vector3(0, 1, 0), AUTO_VIEW_DURATION_MS);
+  animateCameraTo(position, target, new THREE.Vector3(0, 1, 0), 700);
 }
 function frameCamera(w, h, d) {
   const largest = Math.max(w, h, d);
@@ -2413,17 +2160,20 @@ function buildManufacturingExportMeshes() {
   // chamfer and face use welded/coincident boundaries, but the holes remain straight-through.
   // Export dimensions are based on the customer's entered INTERNAL dimensions.
   // Width/height entered by the customer are inside-wall-to-inside-wall, so the
-  // manufactured outside size needs: internal dimension + 1 mm clearance +
-  // 2 mm wall on the left + 2 mm wall on the right = internal + 5 mm total.
+  // manufactured outside size needs: internal dimension + clearance +
+  // selected wall thickness on the left and right.
   // Depth entered by the customer is internal cavity depth, so the manufactured
-  // outside depth needs: internal depth + 1 mm clearance + 2 mm face thickness.
+  // outside depth needs: internal depth + clearance + selected face thickness.
   const exportInternalW = state.widthMm + EXPORT_INTERIOR_CLEARANCE_MM;
   const exportInternalH = state.heightMm + EXPORT_INTERIOR_CLEARANCE_MM;
   const exportInternalD = state.depthMm + EXPORT_INTERIOR_CLEARANCE_MM;
-  const w = (exportInternalW + WALL_MM * 2) * MODEL_SCALE;
-  const h = (exportInternalH + WALL_MM * 2) * MODEL_SCALE;
-  const d = (exportInternalD + WALL_MM) * MODEL_SCALE;
-  const wall = WALL_MM * MODEL_SCALE;
+  const wallMm = state.wallThicknessMm || DEFAULT_WALL_MM;
+  const faceThicknessMm = state.faceThicknessMm || DEFAULT_FACE_THICKNESS_MM;
+  const w = (exportInternalW + wallMm * 2) * MODEL_SCALE;
+  const h = (exportInternalH + wallMm * 2) * MODEL_SCALE;
+  const d = (exportInternalD + faceThicknessMm) * MODEL_SCALE;
+  const wall = wallMm * MODEL_SCALE;
+  const faceThickness = faceThicknessMm * MODEL_SCALE;
   const radius = CORNER_FILLET_MM * MODEL_SCALE;
   const faceInset = FACE_INSET_MM * MODEL_SCALE;
   const chamferDepth = CHAMFER_DEPTH_MM * MODEL_SCALE;
@@ -2485,7 +2235,7 @@ function buildManufacturingExportMeshes() {
   const faceH = Math.max(h - faceInset * 2, wall * 5);
   const faceRadius = Math.max(radius - faceInset, wall * 0.4);
   const chamferBackZ = frontZ - chamferDepth;
-  const faceBackZ = frontZ - wall;
+  const faceBackZ = frontZ - faceThickness;
 
   const chamferGeometry = createPerimeterChamferGeometry(w, h, radius, faceW, faceH, faceRadius, chamferBackZ, frontZ);
   meshes.push(makeExportMesh(chamferGeometry, faceMaterial, "outer_fusion_style_chamfer_3mm_by_2mm"));
@@ -2555,6 +2305,7 @@ function generateCurrentCover3mfBlob() {
 
 function exportCurrentCoverAs3mf() {
   try {
+    if (!validateSidePatternLayout(true)) return;
     const blob = generateCurrentCover3mfBlob();
     downloadBlob(exportFilename("3mf"), "model/3mf", blob);
   } catch (error) {

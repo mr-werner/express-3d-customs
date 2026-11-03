@@ -3,8 +3,9 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 // Blueprint WebStudio client editor support. The site keeps all its content in code as defaults
 // (site-fields.js); the client's published edits are fetched at load and laid over them.
 // Edits are flat field values (text, links, photos, colors, sizes, lists) plus a `layout`:
-// the site's pages, each a list of sections (the site's own designed sections, which can be
-// hidden or moved, and sections added from the library in sections.jsx).
+// the site's pages, each a list of sections (the site's own designed sections, which start
+// on the pages the site gives them and can be hidden or moved, and sections added from the
+// library in sections.jsx).
 // Opened inside the portal editor with ?bws-edit=1, the site also takes live drafts from the
 // editor, reports clicks on editable elements, and shows drag handles for size fields.
 // Same file in every editable client site; only site-fields.js changes.
@@ -68,16 +69,32 @@ function cleanItem(fields, item) {
   return result;
 }
 
-export function defaultLayout(builtins) {
-  return { pages: [{ id: HOME_ID, title: "Home", slug: "", nav: false, sections: builtins.map((b) => ({ id: b.id, type: "builtin" })) }] };
+// Layouts saved before the site had separate pages for its designed sections (version 1)
+// are replaced by the current default
+export const LAYOUT_VERSION = 2;
+
+// Each designed section starts on its own page (`page` in BUILTINS, home when not set);
+// `pages` lists the site's starting pages in menu order
+export function defaultLayout(builtins, pages = []) {
+  const starting = [{ id: HOME_ID, title: "Home", slug: "", nav: false }, ...pages.filter((p) => p.id !== HOME_ID)];
+  return {
+    version: LAYOUT_VERSION,
+    pages: starting.map((p) => ({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      nav: p.id === HOME_ID ? false : p.nav !== false,
+      sections: builtins.filter((b) => (b.page || HOME_ID) === p.id).map((b) => ({ id: b.id, type: "builtin" })),
+    })),
+  };
 }
 
-// Checks a layout against the site's sections. The home page always exists and keeps every
-// designed section (hidden ones too), and designed sections only live on the home page,
-// since the menu links to them there.
-export function cleanLayout(input, builtins, sectionTypes, styleFields) {
-  const fallback = defaultLayout(builtins);
-  if (!input || !Array.isArray(input.pages)) return fallback;
+// Checks a layout against the site's sections. The home page always exists, and every
+// designed section appears exactly once (hidden ones too) on any page; one that's missing
+// comes back on its starting page, or on the home page if that page was deleted.
+export function cleanLayout(input, builtins, sectionTypes, styleFields, startPages = []) {
+  const fallback = defaultLayout(builtins, startPages);
+  if (!input || !Array.isArray(input.pages) || input.version !== LAYOUT_VERSION) return fallback;
   const builtinIds = new Set(builtins.map((b) => b.id));
   const typeMap = Object.fromEntries(sectionTypes.map((t) => [t.type, t]));
   const seenPages = new Set();
@@ -97,7 +114,7 @@ export function cleanLayout(input, builtins, sectionTypes, styleFields) {
     for (const s of Array.isArray(raw.sections) ? raw.sections.slice(0, MAX_SECTIONS) : []) {
       if (!s || !ID_PATTERN.test(String(s.id)) || seenSections.has(s.id)) continue;
       if (s.type === "builtin") {
-        if (!isHome || !builtinIds.has(s.id)) continue;
+        if (!builtinIds.has(s.id)) continue;
         sections.push({ id: s.id, type: "builtin", hidden: s.hidden === true });
       } else if (typeMap[s.type]) {
         sections.push({ id: s.id, type: s.type, hidden: s.hidden === true, ...cleanItem([...styleFields, ...typeMap[s.type].fields], s) });
@@ -106,19 +123,21 @@ export function cleanLayout(input, builtins, sectionTypes, styleFields) {
       }
       seenSections.add(s.id);
     }
-    // A designed section missing from an older layout comes back where it was in the original
-    if (isHome) {
-      builtins.forEach((b, index) => {
-        if (!seenSections.has(b.id)) sections.splice(Math.min(index, sections.length), 0, { id: b.id, type: "builtin", hidden: false });
-      });
-    }
     const title = typeof raw.title === "string" && raw.title.trim() ? raw.title.trim().slice(0, 60) : "Untitled page";
     pages.push({ id: raw.id, title: isHome ? "Home" : title, slug, nav: !isHome && raw.nav !== false, sections });
   }
 
-  if (!pages.some((p) => p.id === HOME_ID)) pages.unshift(fallback.pages[0]);
+  if (!pages.some((p) => p.id === HOME_ID)) pages.unshift({ ...fallback.pages[0], sections: [] });
   pages.sort((a, b) => (a.id === HOME_ID ? -1 : b.id === HOME_ID ? 1 : 0));
-  return { pages };
+
+  // A designed section missing from the layout comes back where it started
+  for (const b of builtins) {
+    if (seenSections.has(b.id)) continue;
+    const target = pages.find((p) => p.id === (b.page || HOME_ID)) || pages[0];
+    const hidden = target.id !== (b.page || HOME_ID);
+    target.sections.push({ id: b.id, type: "builtin", hidden });
+  }
+  return { version: LAYOUT_VERSION, pages };
 }
 
 // Waits briefly for the published edits that index.html started fetching, so visitors
@@ -259,7 +278,7 @@ function schemaOf(field) {
   };
 }
 
-export function SiteContentProvider({ fields, groups, builtins, sectionTypes, styleFields, initial, children }) {
+export function SiteContentProvider({ fields, groups, builtins, startPages = [], sectionTypes, styleFields, initial, children }) {
   const fieldMap = useMemo(() => Object.fromEntries(fields.map((f) => [f.key, f])), [fields]);
   const [overrides, setOverrides] = useState(initial || {});
   const [slug, setSlug] = useState(() => (typeof window === "undefined" ? "" : pathSlug()));
@@ -274,8 +293,8 @@ export function SiteContentProvider({ fields, groups, builtins, sectionTypes, st
   }, [fields, overrides]);
 
   const layout = useMemo(
-    () => cleanLayout(overrides.layout, builtins, sectionTypes, styleFields),
-    [overrides.layout, builtins, sectionTypes, styleFields]
+    () => cleanLayout(overrides.layout, builtins, sectionTypes, styleFields, startPages),
+    [overrides.layout, builtins, sectionTypes, styleFields, startPages]
   );
   const page = layout.pages.find((p) => p.slug === slug) || layout.pages[0];
 
@@ -363,7 +382,7 @@ export function SiteContentProvider({ fields, groups, builtins, sectionTypes, st
       builtins,
       sectionTypes: sectionTypes.map((t) => ({ type: t.type, label: t.label, description: t.description, defaults: t.defaults, fields: t.fields.map(schemaOf) })),
       styleFields: styleFields.map(schemaOf),
-      defaultLayout: defaultLayout(builtins),
+      defaultLayout: defaultLayout(builtins, startPages),
     });
 
     return () => {
@@ -371,7 +390,7 @@ export function SiteContentProvider({ fields, groups, builtins, sectionTypes, st
       document.removeEventListener("click", onClick, true);
       style.remove();
     };
-  }, [fields, groups, builtins, sectionTypes, styleFields, post, navigate]);
+  }, [fields, groups, builtins, startPages, sectionTypes, styleFields, post, navigate]);
 
   function onDrag(key, value) {
     setOverrides((current) => ({ ...current, [key]: value }));
