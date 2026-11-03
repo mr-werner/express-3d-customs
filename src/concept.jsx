@@ -10,6 +10,14 @@ export const STUDIO_PHONE = "+17205156647";
 export const STUDIO_EMAIL = "hello@blueprintwebstudio.com";
 export const STUDIO_WEBSITE = "https://blueprintwebstudio.com";
 export const CLIENT_PORTAL = "https://www.blueprintwebstudio.com/portal";
+const SITE_EDITOR = `${CLIENT_PORTAL}/editor/`;
+
+// Opens the portal editor on the page the client is looking at (it asks them to sign in first if needed)
+function openEditor() {
+  const page = window.location.pathname.replace(/^\/+|\/+$/g, "").toLowerCase();
+  const url = /^[a-z0-9-]{1,40}$/.test(page) ? `${SITE_EDITOR}?page=${page}` : SITE_EDITOR;
+  window.open(url, "_blank", "noopener");
+}
 
 let COMPANY = "";
 let STUDIO_SOURCE = "";
@@ -151,8 +159,9 @@ export function ConceptWidget({ company, abbr }) {
           <div className="concept-widget-body">
             <h2>Your new site, in progress</h2>
             <span className="concept-widget-label">PREPARED FOR {company.toUpperCase()}</span>
-            <p>Click around, try the designer, and tell us what to change.</p>
+            <p>Click around, try the designer, and tell us what to change, or make small edits yourself.</p>
             <button type="button" className="concept-widget-cta" onClick={openForm}>{draft.trim() ? "Continue your notes" : "Send Feedback"} <ArrowUpRight size={18} /></button>
+            <button type="button" className="concept-widget-edit" onClick={openEditor}>Edit this page yourself</button>
             <div className="concept-widget-links">
               {STUDIO_PHONE && <a href={`tel:${STUDIO_PHONE}`}>Call</a>}
               <a href={`mailto:${STUDIO_EMAIL}`}>Email</a>

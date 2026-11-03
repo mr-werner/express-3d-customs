@@ -13,6 +13,8 @@
 .concept-widget-timer strong { font-family: var(--head); font-size: 24px; color: #fff; font-weight: 700; }
 .concept-widget-cta { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; background: var(--accent); color: var(--accent-ink); padding: 12px; font-size: 14px; font-weight: 700; transition: background .2s; }
 .concept-widget-cta:hover { background: var(--accent-hover); }
+.concept-widget-edit { width: 100%; margin-top: 8px; border: 1px solid var(--line-light); background: transparent; color: #fff; padding: 10px; font-size: 13px; font-weight: 700; transition: border-color .2s; }
+.concept-widget-edit:hover { border-color: var(--accent-soft); }
 .concept-widget-links { display: flex; justify-content: center; gap: 13px; margin-top: 12px; font-size: 11px; color: var(--on-dark); }
 .concept-widget-links a + a:before { content: "·"; margin-right: 13px; color: var(--faint); }
 .concept-widget-links a:hover { color: #fff; }
