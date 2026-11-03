@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import { SiteContentProvider, loadPublished } from "./editable.jsx";
 import { SECTION_TYPES, STYLE_FIELDS } from "./sections.jsx";
-import { BUILTINS, FIELDS, GROUPS } from "./site-fields.js";
+import { BUILTINS, FIELDS, GROUPS, PAGES } from "./site-fields.js";
 import "./concept.css";
 import "./styles.css";
 
@@ -15,6 +15,7 @@ loadPublished().then((initial) => {
         fields={FIELDS}
         groups={GROUPS}
         builtins={BUILTINS}
+        startPages={PAGES}
         sectionTypes={SECTION_TYPES}
         styleFields={STYLE_FIELDS}
         initial={initial}

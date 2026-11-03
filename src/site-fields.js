@@ -1,10 +1,9 @@
-import wordmark from "./assets/e3c-wordmark.jpg";
-import crest from "./assets/e3c-crest.jpg";
+import wordmark from "./assets/e3c-wordmark-light.png";
+import crest from "./assets/e3c-crest-light.png";
 import lifestyle from "./assets/shop/chime-lifestyle.jpg";
 import dualTone from "./assets/shop/dual-tone-arches.jpg";
 import archesWhite from "./assets/shop/arches-white.jpg";
 import combos from "./assets/shop/combos-dark.jpg";
-import exposedChimes from "./assets/shop/exposed-chimes.jpg";
 import kef from "./assets/shop/kef-grille.jpg";
 import ornithopter from "./assets/shop/dune-ornithopter.jpg";
 import jango from "./assets/shop/jango-starship.jpg";
@@ -22,7 +21,6 @@ const G = {
   top: "Top bar & header",
   hero: "Hero",
   designer: "Cover designer",
-  patterns: "Patterns",
   colors: "Filament colors",
   measure: "Measuring",
   how: "How it works",
@@ -37,20 +35,30 @@ const G = {
 // Site-wide groups first, then one group per designed section
 export const GROUPS = Object.values(G);
 
-// The home page's designed sections, in their original order. The editor can hide and
-// reorder them; `group` is where their text lives in the editor.
+// The site's starting pages after Home, in menu order. The client can rename, reorder,
+// hide from the menu or delete them in the editor.
+export const PAGES = [
+  { id: "design", title: "Designer", slug: "design" },
+  { id: "reviews", title: "Reviews", slug: "reviews" },
+  { id: "products", title: "Other Products", slug: "other-products" },
+  { id: "about", title: "About", slug: "about" },
+  { id: "faq", title: "FAQ", slug: "faq" },
+];
+
+// The designed sections, in order, with the page each starts on (home when not set).
+// The editor can hide and reorder them; `group` is where their text lives in the editor.
 export const BUILTINS = [
-  { id: "hero", label: "Hero", group: G.hero },
-  { id: "designer", label: "Cover designer", group: G.designer },
-  { id: "patterns", label: "Patterns", group: G.patterns },
-  { id: "colors", label: "Filament colors", group: G.colors },
-  { id: "measure", label: "Measuring", group: G.measure },
+  { id: "hero", label: "Welcome", group: G.hero },
   { id: "how", label: "How it works", group: G.how },
-  { id: "reviews", label: "Reviews", group: G.reviews },
-  { id: "builds", label: "More builds", group: G.builds },
-  { id: "about", label: "About", group: G.about },
-  { id: "faq", label: "FAQ", group: G.faq },
+  { id: "reviews", label: "Reviews (a few)", group: G.reviews },
   { id: "final", label: "Closing banner", group: G.final },
+  { id: "measure", label: "Measuring", group: G.measure, page: "design" },
+  { id: "designer", label: "Cover designer", group: G.designer, page: "design" },
+  { id: "colors", label: "Filament colors", group: G.colors, page: "design" },
+  { id: "reviewsAll", label: "Reviews (all)", group: G.reviews, page: "reviews" },
+  { id: "builds", label: "Other products", group: G.builds, page: "products" },
+  { id: "about", label: "About", group: G.about, page: "about" },
+  { id: "faq", label: "FAQ", group: G.faq, page: "faq" },
 ];
 
 const text = (key, group, label, value, extra = {}) => ({ key, group, label, type: "text", default: value, ...extra });
@@ -63,12 +71,12 @@ const size = (key, label, value, min, max, cssVar, extra = {}) => ({ key, group:
 const item = (key, label, type = "text", value = "", extra = {}) => ({ key, label, type, default: value, ...extra });
 
 export const FIELDS = [
-  color("color.accent", "Accent (buttons, highlights)", "#c34b3c", "--red"),
-  color("color.dark", "Dark background", "#283033", "--char", "Header, hero, footer and dark sections."),
-  color("color.light", "Light accent", "#f2ddb9", "--cream", "Headings and text on dark backgrounds."),
-  color("color.page", "Page background", "#f6efe2", "--paper"),
-  color("color.panel", "Light panels", "#faf3e6", "--cream-2", "FAQ background and light text in the hero."),
-  color("color.text", "Body text", "#283033", "--text"),
+  color("color.accent", "Accent (buttons, highlights)", "#b5583c", "--red"),
+  color("color.dark", "Deep accent", "#2e2a26", "--char", "Dark buttons, step numbers and the closing banner."),
+  color("color.light", "Sand", "#ece2d3", "--cream", "Top bar, footer and soft highlights."),
+  color("color.page", "Page background", "#fbf8f3", "--paper"),
+  color("color.panel", "Light panels", "#f4eee5", "--cream-2", "Alternating section backgrounds and cards."),
+  color("color.text", "Body text", "#2e2a26", "--text"),
 
   size("size.logo", "Logo height", 62, 36, 100, "--logo-h", { help: "You can also drag the handle on the logo." }),
   size("size.heroPhoto", "Hero photo height", 520, 380, 720, "--hero-visual-h", { help: "You can also drag the handle on the hero photos.", step: 10 }),
@@ -78,7 +86,7 @@ export const FIELDS = [
   size("size.corners", "Corner roundness", 14, 0, 28, "--r"),
   size("size.footerLogo", "Footer logo width", 240, 140, 360, "--footer-logo-w", { axis: "x", help: "You can also drag the handle on the footer logo." }),
 
-  image("img.logo", G.brand, "Logo (header and footer)", wordmark, { help: "A wide logo on a dark background works best." }),
+  image("img.logo", G.brand, "Logo (header and footer)", wordmark, { help: "A wide logo with a transparent background works best." }),
   image("img.crest", G.brand, "Badge logo (About section)", crest, { optional: true }),
 
   text("company", G.links, "Business name", "Express 3D Customs"),
@@ -95,29 +103,25 @@ export const FIELDS = [
   text("header.cta", G.top, "Header button", "Design your cover"),
   text("header.shop", G.top, "Shop link text", "Etsy shop"),
 
-  text("hero.eyebrow", G.hero, "Small label", "Custom door chime covers"),
-  text("hero.title", G.hero, "Headline", "That ugly doorbell chime?"),
-  text("hero.highlight", G.hero, "Headline, highlighted line", "Make it the nicest thing on the wall."),
-  para("hero.lede", G.hero, "Intro paragraph", "Enter your chime's measurements, pick a pattern and color, and spin your cover in 3D with a live price before it's printed for you, layer by layer, in Windsor, Colorado."),
-  text("hero.cta", G.hero, "Main button", "Start designing"),
-  text("hero.cta2", G.hero, "Second button", "Browse patterns"),
-  list("hero.stats", G.hero, "Stats", "Stat", [item("value", "Number"), item("label", "Label")], [
+  text("hero.eyebrow", G.hero, "Small label", "Custom 3D printed door chime covers"),
+  text("hero.title", G.hero, "Headline", "Welcome to Express 3D Customs."),
+  text("hero.highlight", G.hero, "Headline, highlighted line", "Your door chime, made beautiful."),
+  para("hero.lede", G.hero, "Intro paragraph", "We're Mike & Bekah, and we design and 3D print custom covers that turn a plain doorbell chime into a finishing touch. Every cover is made to your measurements, in your choice of pattern and color, in Windsor, Colorado."),
+  text("hero.cta", G.hero, "Main button", "Design your cover"),
+  text("hero.cta2", G.hero, "Second button", "How it works"),
+  list("hero.stats", G.hero, "Etsy credentials", "Credential", [item("value", "Number"), item("label", "Label")], [
     { value: "7,500+", label: "Etsy sales" },
-    { value: "4.9 ★", label: "1,100+ reviews" },
-    { value: "10 × 15", label: "patterns × colors" },
-    { value: "16\"", label: "max size, any shape" },
+    { value: "4.9 ★", label: "from 1,100+ reviews" },
+    { value: "Star Seller", label: "on Etsy" },
+    { value: "Made to order", label: "in Windsor, Colorado" },
   ], 4),
   image("img.hero", G.hero, "Main photo", lifestyle),
   image("img.heroSmall", G.hero, "Small photo", dualTone, { optional: true }),
   text("hero.chipTitle", G.hero, "Photo badge, bold line", "Fits NuTone, Broan-NuTone & Newhouse"),
   text("hero.chipText", G.hero, "Photo badge, small line", "and almost any chime you can measure"),
 
-  text("designer.eyebrow", G.designer, "Small label", "Live 3D cover designer"),
-  text("designer.title", G.designer, "Heading", "Build your cover. See it before we print it."),
-
-  text("patterns.eyebrow", G.patterns, "Small label", "Front patterns"),
-  text("patterns.title", G.patterns, "Heading", "Ten front patterns. Tap one to try it."),
-  para("patterns.text", G.patterns, "Paragraph", "These are the exact cutout files the printer uses. Pick one and it loads straight into the designer, or keep the front blank for a clean, solid cover."),
+  text("designer.eyebrow", G.designer, "Small label", "Step 2 · Design it"),
+  text("designer.title", G.designer, "Heading", "Build your cover and see it in 3D."),
 
   text("colors.eyebrow", G.colors, "Small label", "15 filament colors"),
   text("colors.title", G.colors, "Heading", "One color, or two."),
@@ -125,12 +129,9 @@ export const FIELDS = [
   text("colors.note", G.colors, "Premium note", "Gold, Silver and Copper are premium silk filaments, +$2."),
   image("img.colors", G.colors, "Photo", combos, { optional: true }),
 
-  text("measure.eyebrow", G.measure, "Small label", "Accurate measurements = perfect fit"),
+  text("measure.eyebrow", G.measure, "Small label", "Step 1 · Measure"),
   text("measure.title", G.measure, "Heading", "Measure the backplate, not the old cover."),
   para("measure.text", G.measure, "Paragraph", "Round up to the nearest 1/16\". The cover slides over the backplate and stays put with friction and gravity. No hardware needed. Want a looser fit? Oversize it and hang it from two finishing nails."),
-  text("measure.cta", G.measure, "Button", "Enter my measurements"),
-  image("img.measure", G.measure, "Photo", exposedChimes, { optional: true }),
-  text("measure.caption", G.measure, "Photo caption", "Exposed tubes or bells? Most setups can be covered at no extra cost."),
 
   text("how.eyebrow", G.how, "Small label", "How it works"),
   text("how.title", G.how, "Heading", "From five minutes with a tape measure to a printed cover."),
@@ -145,8 +146,11 @@ export const FIELDS = [
   text("reviews.eyebrow", G.reviews, "Small label", "Etsy reviews"),
   text("reviews.title", G.reviews, "Heading", "4.9 stars from 1,100+ reviews."),
   text("reviews.badge", G.reviews, "Badge text", "Etsy Star Seller · 7,500+ sales"),
+  text("reviews.more", G.reviews, "Home page link to all reviews", "Read more reviews"),
+  text("reviewsAll.title", G.reviews, "Reviews page heading", "What customers say on Etsy."),
+  para("reviewsAll.text", G.reviews, "Reviews page intro", "Every review here is from a real Etsy order, quoted word for word. The newest ones load from Etsy automatically.", { rows: 3 }),
 
-  text("builds.eyebrow", G.builds, "Small label", "Beyond chime covers"),
+  text("builds.eyebrow", G.builds, "Small label", "Other products"),
   text("builds.title", G.builds, "Heading", "If it needs a part, a mount or a fix, we'll print it."),
   text("builds.cta", G.builds, "Button", "See all 60+ items on Etsy"),
   list("builds.cards", G.builds, "Cards", "Card", [item("img", "Photo", "image", "", { optional: true }), item("title", "Title"), item("text", "Text", "textarea", "", { rows: 3 })], [
@@ -168,7 +172,7 @@ export const FIELDS = [
     { text: "Every design reviewed before it prints" },
     { text: "Small family business, Etsy Star Seller" },
   ], 8),
-  image("img.about", G.about, "Photo", archesWhite, { optional: true }),
+  image("img.about", G.about, "Photo (a photo of the two of you works great here)", archesWhite, { optional: true }),
 
   text("faq.eyebrow", G.faq, "Small label", "FAQ"),
   text("faq.title", G.faq, "Heading", "Fit and finish questions."),

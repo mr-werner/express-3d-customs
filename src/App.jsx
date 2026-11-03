@@ -5,30 +5,9 @@ import { CLIENT_PORTAL, ConceptWidget, StudioCredit } from "./concept.jsx";
 import { EDIT_MODE, HOME_ID, T, ed, usePages, useSite } from "./editable.jsx";
 import { Section } from "./sections.jsx";
 import reviewSarah from "./assets/shop/review-sarah.jpg";
-import archesSvg from "./assets/patterns/arches.svg";
-import anglesSvg from "./assets/patterns/angles.svg";
-import diamondsSvg from "./assets/patterns/diamonds.svg";
-import flowersSvg from "./assets/patterns/flowers.svg";
-import linesSvg from "./assets/patterns/lines.svg";
-import petalsSvg from "./assets/patterns/petals.svg";
-import squaresSvg from "./assets/patterns/squares.svg";
-import starsSvg from "./assets/patterns/stars.svg";
-import trianglesSvg from "./assets/patterns/triangles.svg";
-import wedgeSvg from "./assets/patterns/wedge-bloom.svg";
 
 // Text, links, photos, colors and sizes the client can edit live in site-fields.js
 const ABBR = "e3d";
-
-// Menu links to the home page's designed sections: [label, anchor, section id]
-const NAV = [
-  ["Designer", "#designer", "designer"],
-  ["Patterns", "#patterns", "patterns"],
-  ["Measuring", "#measure", "measure"],
-  ["Reviews", "#reviews", "reviews"],
-  ["More builds", "#shop", "builds"],
-  ["About", "#about", "about"],
-  ["FAQ", "#faq", "faq"],
-];
 
 // How sections added in the editor borrow this site's look (see sections.jsx)
 const SECTION_UI = {
@@ -43,37 +22,11 @@ const SECTION_UI = {
   },
 };
 
-const PATTERNS = [
-  { name: "Arches", img: archesSvg },
-  { name: "Angles", img: anglesSvg },
-  { name: "Diamonds", img: diamondsSvg },
-  { name: "Flowers", img: flowersSvg },
-  { name: "Lines", img: linesSvg },
-  { name: "Petals", img: petalsSvg },
-  { name: "Squares", img: squaresSvg },
-  { name: "Stars", img: starsSvg },
-  { name: "Triangles", img: trianglesSvg },
-  { name: "Wedge Bloom", img: wedgeSvg },
-];
-
-const SIDE_PATTERNS = ["Blank", "Diamonds", "Squiggles", "Footballs", "Hex Gems"];
-
 // Filament colors and swatch hex values from the live designer's settings.
 const COLORS = [
   ["Black", "#050505"], ["White", "#e0deda"], ["Gold", "#e1c156", true], ["Silver", "#7d7d7d", true], ["Copper", "#b85a3e", true],
   ["Beige", "#eae9d4"], ["Gray", "#8c8d90"], ["Yellow", "#e4c207"], ["Orange", "#e55d06"], ["Red", "#931721"],
   ["Light Blue", "#2799f1"], ["Blue", "#0141ab"], ["Navy Blue", "#18215a"], ["Teal", "#018794"], ["Emerald Green", "#01342c"],
-];
-
-const SIZE_EXAMPLES = [
-  ["X-Small", "3 × 6 × 1.5", "27"],
-  ["Small", "5 × 4 × 1.875", "37.5"],
-  ["Medium", "5 × 7 × 2", "70"],
-  ["Large", "9 × 6 × 2.25", "122"],
-  ["X-Large", "8 × 7.5 × 3", "180"],
-  ["2X-Large", "8 × 6 × 5", "240"],
-  ["3X-Large", "9 × 9 × 4", "324"],
-  ["4X-Large", "10 × 10 × 4", "400"],
 ];
 
 // Verbatim from the Express3DCustoms Etsy shop reviews (5 stars each), September 2026.
@@ -86,21 +39,52 @@ const REVIEWS = [
   { name: "Gloria", date: "Sep 6, 2026", text: "Easy to put on. I highly recommend." },
 ];
 
-function Rating({ size = 15 }) {
+// Newer reviews load from Etsy through /api/reviews (cached about a month); the list above is the fallback.
+let reviewsRequest = null;
+function useEtsyReviews() {
+  const [reviews, setReviews] = useState(REVIEWS);
+  useEffect(() => {
+    let live = true;
+    if (!reviewsRequest) {
+      reviewsRequest = fetch("/api/reviews")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => (Array.isArray(data?.reviews) && data.reviews.length ? data.reviews : null))
+        .catch(() => null);
+    }
+    reviewsRequest.then((list) => { if (live && list) setReviews(list); });
+    return () => { live = false; };
+  }, []);
+  return reviews;
+}
+
+function Rating({ size = 15, value = 5 }) {
   return (
-    <span className="stars" aria-label="5 out of 5 stars">
-      {[0, 1, 2, 3, 4].map((i) => <Star key={i} size={size} fill="currentColor" strokeWidth={0} />)}
+    <span className="stars" aria-label={`${value} out of 5 stars`}>
+      {[0, 1, 2, 3, 4].map((i) => <Star key={i} size={size} fill={i < value ? "currentColor" : "none"} strokeWidth={i < value ? 0 : 1.5} />)}
     </span>
   );
 }
 
-// A link to a home page anchor that also works from the other pages
-function useHomeLink() {
-  const { page, navigate } = usePages();
-  return (hash) => ({
-    href: page.id === HOME_ID ? hash : `/${hash}`,
-    onClick: page.id === HOME_ID ? undefined : (event) => { event.preventDefault(); navigate("", hash); },
-  });
+function ReviewCard({ r }) {
+  return (
+    <figure className={`review${r.photo ? " has-photo" : ""}`}>
+      {r.photo && <img src={r.photo} alt={`Photo from ${r.name}'s review`} loading="lazy" width="300" height="300" />}
+      <Rating size={14} value={r.rating || 5} />
+      <blockquote>"{r.text}"</blockquote>
+      <figcaption><strong>{r.name || "Etsy buyer"}</strong> · {r.date} · on Etsy</figcaption>
+    </figure>
+  );
+}
+
+// A link to a built-in section wherever the client has placed it: on another page it opens
+// that page at the top (so the designer page starts with the measuring steps), on this page it scrolls.
+function useSectionLink() {
+  const { pages, page, navigate } = usePages();
+  return (sectionId) => {
+    const target = pages.find((p) => p.sections.some((s) => s.id === sectionId && !s.hidden)) || pages[0];
+    if (target.id === page.id) return { href: `#${sectionId}` };
+    return { href: `/${target.slug}`, onClick: (event) => { event.preventDefault(); navigate(target.slug); }, "data-bws-page": target.slug };
+  };
 }
 
 function AnnouncementBar() {
@@ -120,7 +104,7 @@ function AnnouncementBar() {
 function Header() {
   const c = useSite();
   const { pages, page, navigate } = usePages();
-  const homeLink = useHomeLink();
+  const link = useSectionLink();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -129,8 +113,7 @@ function Header() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  const home = pages[0];
-  const shown = new Set(home.sections.filter((s) => !s.hidden).map((s) => s.id));
+  const hasDesigner = pages.some((p) => p.sections.some((s) => s.id === "designer" && !s.hidden));
   const goTo = (slug) => (event) => { event.preventDefault(); setOpen(false); navigate(slug); };
   return (
     <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
@@ -139,10 +122,6 @@ function Header() {
           <img src={c("img.logo")} alt={c("company")} width="800" height="372" {...ed("img.logo", "size.logo")} />
         </a>
         <nav className={`nav${open ? " is-open" : ""}`} aria-label="Main">
-          {NAV.filter(([, , id]) => shown.has(id)).map(([label, hash]) => {
-            const { href, onClick } = homeLink(hash);
-            return <a key={hash} href={href} onClick={(e) => { setOpen(false); onClick?.(e); }}>{label}</a>;
-          })}
           {pages.filter((p) => p.nav).map((p) => (
             <a key={p.id} href={`/${p.slug}`} onClick={goTo(p.slug)} aria-current={p.id === page.id ? "page" : undefined} data-bws-page={p.slug}>{p.title}</a>
           ))}
@@ -150,8 +129,8 @@ function Header() {
             <a className="nav-shop" href={c("link.etsy")} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} {...ed("header.shop")}><ShoppingBag size={16} /> {c("header.shop")}</a>
           )}
         </nav>
-        {c("header.cta") && shown.has("designer") && (
-          <a className="btn btn-red header-cta" {...homeLink("#designer")} {...ed("header.cta")}>{c("header.cta")}</a>
+        {c("header.cta") && hasDesigner && (
+          <a className="btn btn-red header-cta" {...link("designer")} {...ed("header.cta")}>{c("header.cta")}</a>
         )}
         <button className="menu-btn" type="button" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
           {open ? <X size={24} /> : <Menu size={24} />}
@@ -177,6 +156,7 @@ function NozzlePath({ className = "" }) {
 
 function Hero() {
   const c = useSite();
+  const link = useSectionLink();
   const smallPhoto = c("img.heroSmall");
   return (
     <section className="hero" id="top" {...ed("section:hero")}>
@@ -190,8 +170,8 @@ function Hero() {
           </h1>
           <T k="hero.lede" as="p" className="lede" />
           <div className="hero-ctas">
-            {c("hero.cta") && <a className="btn btn-red btn-lg" href="#designer" {...ed("hero.cta")}>{c("hero.cta")} <ArrowRight size={18} /></a>}
-            <T k="hero.cta2" as="a" className="btn btn-ghost btn-lg" href="#patterns" />
+            {c("hero.cta") && <a className="btn btn-red btn-lg" {...link("designer")} {...ed("hero.cta")}>{c("hero.cta")} <ArrowRight size={18} /></a>}
+            {c("hero.cta2") && <a className="btn btn-ghost btn-lg" {...link("how")} {...ed("hero.cta2")}>{c("hero.cta2")}</a>}
           </div>
           {c("hero.stats").length > 0 && (
             <dl className="hero-stats" style={{ "--stats": c("hero.stats").length }} {...ed("hero.stats")}>
@@ -252,33 +232,6 @@ function DesignerSection() {
   );
 }
 
-function Patterns() {
-  return (
-    <section className="section patterns" id="patterns" aria-labelledby="patterns-title" {...ed("section:patterns")}>
-      <div className="wrap">
-        <div className="section-head">
-          <T k="patterns.eyebrow" as="p" className="eyebrow dark"><span className="eyebrow-dot" /> </T>
-          <T k="patterns.title" as="h2" id="patterns-title" />
-          <T k="patterns.text" as="p" />
-        </div>
-        <div className="pattern-grid-cards">
-          {PATTERNS.map((p) => (
-            <button type="button" key={p.name} className="pattern-card" onClick={() => applyToDesigner({ pattern: p.name })}>
-              <span className="pattern-plate"><img src={p.img} alt="" loading="lazy" width="486" height="342" /></span>
-              <span className="pattern-name">{p.name}<ArrowUpRight size={16} /></span>
-            </button>
-          ))}
-        </div>
-        <div className="side-row">
-          <span className="side-label">Side walls</span>
-          {SIDE_PATTERNS.map((s) => <span key={s} className="side-pill">{s}</span>)}
-          <span className="side-note">Set how many side cutouts, their size and spacing in the designer.</span>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function Colors() {
   const c = useSite();
   return (
@@ -307,36 +260,19 @@ function Colors() {
 }
 
 function Measure() {
-  const c = useSite();
   return (
     <section className="section measure" id="measure" aria-labelledby="measure-title" {...ed("section:measure")}>
       <div className="wrap measure-grid">
         <div className="measure-copy">
           <T k="measure.eyebrow" as="p" className="eyebrow dark"><span className="eyebrow-dot" /> </T>
-          <T k="measure.title" as="h2" id="measure-title" />
-          <ol className="measure-list">
-            <li><span>W</span><div><strong>Width</strong> outside edge to outside edge of the chime's backplate.</div></li>
-            <li><span>H</span><div><strong>Height</strong> top to bottom of the backplate.</div></li>
-            <li><span>D</span><div><strong>Depth</strong> from the wall to the part that sticks out the furthest.</div></li>
-          </ol>
+          <T k="measure.title" as="h1" id="measure-title" />
           <T k="measure.text" as="p" />
-          {c("measure.cta") && <a className="btn btn-dark" href="#designer" {...ed("measure.cta")}>{c("measure.cta")} <ArrowRight size={17} /></a>}
         </div>
-        <div className="measure-table-wrap">
-          <table className="measure-table">
-            <caption>Typical chime sizes (H × W × D, inches)</caption>
-            <thead><tr><th>Size</th><th>Example</th><th>Cubic in.</th></tr></thead>
-            <tbody>
-              {SIZE_EXAMPLES.map(([size, dims, vol]) => <tr key={size}><td>{size}</td><td>{dims}</td><td>{vol}</td></tr>)}
-            </tbody>
-          </table>
-          {c("img.measure") && (
-            <figure className="measure-photo">
-              <img src={c("img.measure")} alt="Exposed tube and bell chimes that Express 3D Customs has covered" loading="lazy" width="730" height="349" {...ed("img.measure")} />
-              <T k="measure.caption" as="figcaption" />
-            </figure>
-          )}
-        </div>
+        <ol className="measure-list">
+          <li><span>W</span><div><strong>Width</strong> outside edge to outside edge of the chime's backplate.</div></li>
+          <li><span>H</span><div><strong>Height</strong> top to bottom of the backplate.</div></li>
+          <li><span>D</span><div><strong>Depth</strong> from the wall to the part that sticks out the furthest.</div></li>
+        </ol>
       </div>
     </section>
   );
@@ -345,16 +281,16 @@ function Measure() {
 function HowItWorks() {
   const c = useSite();
   return (
-    <section className="section how" aria-labelledby="how-title" {...ed("section:how")}>
+    <section className="section how" id="how" aria-labelledby="how-title" {...ed("section:how")}>
       <div className="wrap">
-        <div className="section-head on-dark">
-          <T k="how.eyebrow" as="p" className="eyebrow"><span className="eyebrow-dot" /> </T>
+        <div className="section-head">
+          <T k="how.eyebrow" as="p" className="eyebrow dark"><span className="eyebrow-dot" /> </T>
           <T k="how.title" as="h2" id="how-title" />
         </div>
         <ol className="layers" {...ed("how.steps")}>
           {c("how.steps").map((step, i) => (
             <li key={i} style={{ "--i": i }}>
-              <span className="layer-no">L{String(i + 1).padStart(2, "0")}</span>
+              <span className="layer-no">{String(i + 1).padStart(2, "0")}</span>
               {step.title && <h3>{step.title}</h3>}
               {step.text && <p>{step.text}</p>}
             </li>
@@ -367,6 +303,10 @@ function HowItWorks() {
 
 function Reviews() {
   const c = useSite();
+  const link = useSectionLink();
+  const reviews = useEtsyReviews().slice(0, 3);
+  const { pages } = usePages();
+  const hasAll = pages.some((p) => p.sections.some((s) => s.id === "reviewsAll" && !s.hidden));
   return (
     <section className="section reviews" id="reviews" aria-labelledby="reviews-title" {...ed("section:reviews")}>
       <div className="wrap">
@@ -380,16 +320,39 @@ function Reviews() {
           </a>
         </div>
         <div className="review-grid">
-          {REVIEWS.map((r) => (
-            <figure key={r.name + r.date} className={`review${r.photo ? " has-photo" : ""}`}>
-              {r.photo && <img src={r.photo} alt={`Photo from ${r.name}'s review`} loading="lazy" width="300" height="300" />}
-              <Rating size={14} />
-              <blockquote>"{r.text}"</blockquote>
-              <figcaption><strong>{r.name}</strong> · {r.date} · on Etsy</figcaption>
-            </figure>
-          ))}
+          {reviews.map((r, i) => <ReviewCard key={i} r={r} />)}
         </div>
-        <p className="reviews-source">Quoted word for word from the {c("company")} shop reviews on Etsy.</p>
+        {hasAll && c("reviews.more") && (
+          <p className="reviews-more"><a className="btn btn-dark" {...link("reviewsAll")} {...ed("reviews.more")}>{c("reviews.more")} <ArrowRight size={17} /></a></p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ReviewsAll() {
+  const c = useSite();
+  const reviews = useEtsyReviews();
+  return (
+    <section className="section reviews reviews-all" id="reviewsAll" aria-labelledby="reviews-all-title" {...ed("section:reviewsAll")}>
+      <div className="wrap">
+        <div className="reviews-head">
+          <div>
+            <T k="reviews.eyebrow" as="p" className="eyebrow dark"><span className="eyebrow-dot" /> </T>
+            <T k="reviewsAll.title" as="h1" id="reviews-all-title" />
+            <T k="reviewsAll.text" as="p" className="reviews-intro" />
+          </div>
+          <a className="review-badge" href={c("link.reviews")} target="_blank" rel="noopener noreferrer" {...ed("reviews.badge")}>
+            <strong>4.9</strong><Rating /><span>{c("reviews.badge")}</span><ArrowUpRight size={16} />
+          </a>
+        </div>
+        <div className="review-grid review-grid-all">
+          {reviews.map((r, i) => <ReviewCard key={i} r={r} />)}
+        </div>
+        <p className="reviews-source">
+          Quoted word for word from the {c("company")} shop reviews on Etsy.{" "}
+          <a href={c("link.reviews")} target="_blank" rel="noopener noreferrer">See all reviews on Etsy <ArrowUpRight size={14} /></a>
+        </p>
       </div>
     </section>
   );
@@ -400,12 +363,12 @@ function MoreBuilds() {
   return (
     <section className="section builds" id="shop" aria-labelledby="builds-title" {...ed("section:builds")}>
       <div className="wrap">
-        <div className="section-head on-dark split">
+        <div className="section-head split">
           <div>
-            <T k="builds.eyebrow" as="p" className="eyebrow"><span className="eyebrow-dot" /> </T>
-            <T k="builds.title" as="h2" id="builds-title" />
+            <T k="builds.eyebrow" as="p" className="eyebrow dark"><span className="eyebrow-dot" /> </T>
+            <T k="builds.title" as="h1" id="builds-title" />
           </div>
-          {c("builds.cta") && <a className="btn btn-cream" href={c("link.etsy")} target="_blank" rel="noopener noreferrer" {...ed("builds.cta")}>{c("builds.cta")} <ArrowUpRight size={17} /></a>}
+          {c("builds.cta") && <a className="btn btn-dark" href={c("link.etsy")} target="_blank" rel="noopener noreferrer" {...ed("builds.cta")}>{c("builds.cta")} <ArrowUpRight size={17} /></a>}
         </div>
         <div className="build-grid" {...ed("builds.cards")}>
           {c("builds.cards").map((card, i) => (
@@ -437,13 +400,13 @@ function About() {
       <div className={`wrap about-grid${photo ? "" : " no-photo"}`}>
         {photo && (
           <figure className="about-photo">
-            <img src={photo} alt="White Arches door chime cover" loading="lazy" width="794" height="794" {...ed("img.about")} />
+            <img src={photo} alt="Mike and Bekah of Express 3D Customs" loading="lazy" width="794" height="794" {...ed("img.about")} />
             {c("img.crest") && <img className="about-crest" src={c("img.crest")} alt={`${c("company")} logo`} loading="lazy" width="500" height="210" {...ed("img.crest")} />}
           </figure>
         )}
         <div>
           <T k="about.eyebrow" as="p" className="eyebrow dark"><span className="eyebrow-dot" /> </T>
-          <T k="about.title" as="h2" id="about-title" />
+          <T k="about.title" as="h1" id="about-title" />
           <T k="about.p1" as="p" />
           <T k="about.p2" as="p" />
           {c("about.points").length > 0 && (
@@ -464,7 +427,7 @@ function Faq() {
       <div className="wrap faq-grid">
         <div>
           <T k="faq.eyebrow" as="p" className="eyebrow dark"><span className="eyebrow-dot" /> </T>
-          <T k="faq.title" as="h2" id="faq-title" />
+          <T k="faq.title" as="h1" id="faq-title" />
           <T k="faq.text" as="p" />
         </div>
         <div className="faq-list-site" {...ed("faq.items")}>
@@ -482,12 +445,13 @@ function Faq() {
 
 function FinalCta() {
   const c = useSite();
+  const link = useSectionLink();
   return (
     <section className="final-cta" {...ed("section:final")}>
       <div className="wrap final-inner">
         <NozzlePath className="final-nozzle" />
         <T k="final.title" as="h2" />
-        {c("final.cta") && <a className="btn btn-red btn-lg" href="#designer" {...ed("final.cta")}>{c("final.cta")} <ArrowRight size={18} /></a>}
+        {c("final.cta") && <a className="btn btn-red btn-lg" {...link("designer")} {...ed("final.cta")}>{c("final.cta")} <ArrowRight size={18} /></a>}
       </div>
     </section>
   );
@@ -496,7 +460,6 @@ function FinalCta() {
 function Footer() {
   const c = useSite();
   const { pages, navigate } = usePages();
-  const homeLink = useHomeLink();
   const email = c("contact.email");
   const phone = c("contact.phone");
   const socials = [["Instagram", c("link.instagram")], ["Facebook", c("link.facebook")]].filter(([, href]) => href);
@@ -515,11 +478,8 @@ function Footer() {
           )}
         </div>
         <div>
-          <h3>Design</h3>
-          <a {...homeLink("#designer")}>Cover designer</a>
-          <a {...homeLink("#patterns")}>Patterns</a>
-          <a {...homeLink("#measure")}>Measuring guide</a>
-          <a {...homeLink("#faq")}>FAQ</a>
+          <h3>Explore</h3>
+          <a href="/" onClick={(e) => { e.preventDefault(); navigate(""); }} data-bws-page="">Home</a>
           {extraPages.map((p) => (
             <a key={p.id} href={`/${p.slug}`} onClick={(e) => { e.preventDefault(); navigate(p.slug); }} data-bws-page={p.slug}>{p.title}</a>
           ))}
@@ -550,11 +510,11 @@ function Footer() {
 const BUILTIN_COMPONENTS = {
   hero: Hero,
   designer: DesignerSection,
-  patterns: Patterns,
   colors: Colors,
   measure: Measure,
   how: HowItWorks,
   reviews: Reviews,
+  reviewsAll: ReviewsAll,
   builds: MoreBuilds,
   about: About,
   faq: Faq,
@@ -572,10 +532,10 @@ export default function App() {
 
   return (
     <>
-      {page.id === HOME_ID && <a className="skip" href="#designer">Skip to the designer</a>}
+      <a className="skip" href="#main">Skip to content</a>
       <AnnouncementBar />
       <Header />
-      <main className={page.id === HOME_ID ? "" : "subpage"}>
+      <main id="main" className={page.id === HOME_ID ? "" : "subpage"}>
         {page.sections.map((section) => {
           if (section.hidden) return null;
           if (section.type === "builtin") {

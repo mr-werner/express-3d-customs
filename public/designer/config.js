@@ -1,4 +1,5 @@
 // Designer settings copied from the live express3dcustoms.com configurator (pricing, colors, pattern order, camera).
+// Color codes are lowercase because the new builder script looks Gold up as "#e1c156".
 // ajaxUrl/nonce/productId are left out in this preview, so "Add to Cart" shows the request summary instead of posting to WooCommerce.
 window.E3D_CHIME_CONFIG = {
   "settings": {
@@ -35,8 +36,8 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "White",
-        "value": "#E0DEDA",
-        "renderValue": "#D8D6CE",
+        "value": "#e0deda",
+        "renderValue": "#d8d6ce",
         "roughness": 0.88,
         "metalness": 0.51,
         "bumpiness": 1,
@@ -45,8 +46,8 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "Gold",
-        "value": "#E1C156",
-        "renderValue": "#D2A311",
+        "value": "#e1c156",
+        "renderValue": "#d2a311",
         "roughness": 0.85,
         "metalness": 1,
         "bumpiness": 1,
@@ -55,8 +56,8 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "Silver",
-        "value": "#7D7D7D",
-        "renderValue": "#8F9291",
+        "value": "#7d7d7d",
+        "renderValue": "#8f9291",
         "roughness": 0.2,
         "metalness": 0.78,
         "bumpiness": 1,
@@ -65,8 +66,8 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "Copper",
-        "value": "#66302A",
-        "renderValue": "#B85A3E",
+        "value": "#66302a",
+        "renderValue": "#b85a3e",
         "roughness": 0.24,
         "metalness": 0.72,
         "bumpiness": 1,
@@ -75,8 +76,8 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "Beige",
-        "value": "#EAE9D4",
-        "renderValue": "#C8BD95",
+        "value": "#eae9d4",
+        "renderValue": "#c8bd95",
         "roughness": 0.82,
         "metalness": 0,
         "bumpiness": 1,
@@ -85,7 +86,7 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "Gray",
-        "value": "#8C8D90",
+        "value": "#8c8d90",
         "renderValue": "#768288",
         "roughness": 0.78,
         "metalness": 0,
@@ -95,8 +96,8 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "Yellow",
-        "value": "#E4C207",
-        "renderValue": "#D8B900",
+        "value": "#e4c207",
+        "renderValue": "#d8b900",
         "roughness": 0.62,
         "metalness": 0,
         "bumpiness": 1,
@@ -105,8 +106,8 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "Orange",
-        "value": "#E55D06",
-        "renderValue": "#D85F08",
+        "value": "#e55d06",
+        "renderValue": "#d85f08",
         "roughness": 0.62,
         "metalness": 0,
         "bumpiness": 1,
@@ -116,7 +117,7 @@ window.E3D_CHIME_CONFIG = {
       {
         "label": "Red",
         "value": "#931721",
-        "renderValue": "#B51F28",
+        "renderValue": "#b51f28",
         "roughness": 0.64,
         "metalness": 0,
         "bumpiness": 1,
@@ -125,8 +126,8 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "Light Blue",
-        "value": "#2799F1",
-        "renderValue": "#209EE3",
+        "value": "#2799f1",
+        "renderValue": "#209ee3",
         "roughness": 0.6,
         "metalness": 0,
         "bumpiness": 1,
@@ -135,8 +136,8 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "Blue",
-        "value": "#0141AB",
-        "renderValue": "#0750CF",
+        "value": "#0141ab",
+        "renderValue": "#0750cf",
         "roughness": 0.6,
         "metalness": 0,
         "bumpiness": 1,
@@ -145,8 +146,8 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "Navy Blue",
-        "value": "#18215A",
-        "renderValue": "#172E7A",
+        "value": "#18215a",
+        "renderValue": "#172e7a",
         "roughness": 0.66,
         "metalness": 0,
         "bumpiness": 1,
@@ -156,7 +157,7 @@ window.E3D_CHIME_CONFIG = {
       {
         "label": "Teal",
         "value": "#018794",
-        "renderValue": "#00AEB8",
+        "renderValue": "#00aeb8",
         "roughness": 0.62,
         "metalness": 0,
         "bumpiness": 1,
@@ -165,8 +166,8 @@ window.E3D_CHIME_CONFIG = {
       },
       {
         "label": "Emerald Green",
-        "value": "#01342C",
-        "renderValue": "#01342C",
+        "value": "#01342c",
+        "renderValue": "#01342c",
         "roughness": 0,
         "metalness": 0,
         "bumpiness": 0,
