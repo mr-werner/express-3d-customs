@@ -357,14 +357,69 @@ main.subpage > .section:first-child { padding-top: calc(var(--section-pad) * .6)
 .footer .footer-studio-brand strong { color: var(--text); }
 .footer .footer-studio-brand:hover strong { color: var(--red-deep); }
 
-/* Desktop: the designer fills one screen below the sticky header. The options column scrolls on its
-   own, so the 3D viewer beside it stays in view while options are changed. The viewer's text rows keep
-   their full height and the canvas takes the rest. */
+/* 3D preview panel: a compact header (title, size, patterns, price), a large canvas with a full
+   screen button and a drag handle, and one slim row of view controls. */
+.designer-section .e3d-chime-configurator .preview-toolbar { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; gap: 10px 16px; padding: 14px 18px !important; align-items: start !important; }
+.designer-section .e3d-chime-configurator .pv-title { min-width: 0 !important; padding: 0 !important; }
+.designer-section .e3d-chime-configurator .pv-title h3 { font-size: 21px; margin: 0 0 4px; }
+.designer-section .e3d-chime-configurator .pv-title strong { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-2); line-height: 1.35; }
+.designer-section .e3d-chime-configurator .preview-toolbar .preview-patterns { grid-column: 1 !important; grid-row: 2; display: flex !important; flex-wrap: wrap; gap: 6px; min-width: 0; text-align: left; font-size: 12px; }
+.designer-section .e3d-chime-configurator .preview-toolbar .preview-patterns > span { padding: 5px 10px; border-radius: 999px; }
+.designer-section .e3d-chime-configurator .preview-toolbar > .price-card { grid-column: 2 !important; grid-row: 1 / span 2; width: auto; min-width: 180px; padding: 10px 14px; }
+.designer-section .e3d-chime-configurator .price-card strong#priceTotal { font-size: 1.7rem; }
+.designer-section .e3d-chime-configurator .price-card p { margin: 4px 0 6px; font-size: .7rem; max-width: 200px; }
+.designer-section .e3d-chime-configurator .price-details summary { cursor: pointer; font-size: .74rem; font-weight: 700; color: var(--red-deep); }
+.designer-section .e3d-chime-configurator .price-details .price-breakdown { margin-top: 6px; }
+.designer-section .e3d-chime-configurator .canvas-wrap { position: relative; }
+.designer-section .e3d-chime-configurator .pv-full { position: absolute; top: 12px; right: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border: 1px solid var(--line-strong); border-radius: 999px; background: color-mix(in srgb, var(--card) 92%, transparent); color: var(--text); font: 600 13px/1 var(--body); cursor: pointer; box-shadow: 0 4px 12px rgba(46, 42, 38, .08); }
+.designer-section .e3d-chime-configurator .pv-full:hover { border-color: var(--char); }
+.designer-section .e3d-chime-configurator .pv-full span[aria-hidden] { font-size: 15px; }
+.designer-section .e3d-chime-configurator .canvas-wrap .viewer-help-strip { position: absolute; left: 12px; bottom: 10px; z-index: 2; display: block; margin: 0; padding: 5px 10px; border-radius: 999px; background: color-mix(in srgb, var(--card) 80%, transparent); color: var(--text-2); font-size: 12px; font-weight: 600; pointer-events: none; max-width: calc(100% - 24px); }
+.designer-section .e3d-chime-configurator .pv-resize { position: absolute; left: 0; top: 0; bottom: 0; z-index: 3; width: 14px; cursor: col-resize; touch-action: none; }
+.designer-section .e3d-chime-configurator .pv-resize::after { content: ""; position: absolute; left: 4px; top: 50%; width: 5px; height: 56px; margin-top: -28px; border-radius: 3px; background: var(--char); opacity: .28; transition: opacity .15s; }
+.designer-section .e3d-chime-configurator .pv-resize:hover::after, .designer-section .e3d-chime-configurator .pv-resize:focus-visible::after { opacity: .7; }
+.designer-section .e3d-chime-configurator .preview-panel .preview-meta { display: flex !important; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 18px; padding: 10px 18px 12px !important; font-size: 13.5px; }
+.designer-section .e3d-chime-configurator .preview-meta .light-control { display: flex; align-items: center; gap: 10px; margin: 0; min-width: 0 !important; flex: 0 1 240px; }
+.designer-section .e3d-chime-configurator .preview-meta .light-control input { flex: 1; padding: 0; }
+.designer-section .e3d-chime-configurator .preview-meta .preview-actions { display: flex !important; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-left: auto; }
+.designer-section .e3d-chime-configurator .preview-meta .preview-actions > * { grid-column: auto !important; }
+.designer-section .e3d-chime-configurator .preview-meta .auto-view-control { border: 0 !important; padding: 0 !important; background: none !important; }
+.designer-section .e3d-chime-configurator .preview-meta .toggle-control { margin: 0; display: inline-flex; align-items: center; gap: 6px; }
+.designer-section .e3d-chime-configurator .preview-meta .toggle-control input { width: auto; padding: 0; }
+.designer-section .e3d-chime-configurator .preview-meta .ghost-button { min-height: 34px; padding: 6px 14px; border-radius: 999px; }
+.designer-section .e3d-chime-configurator .preview-meta .render-note { flex-basis: 100%; margin: 0; font-size: 11.5px; font-weight: 500; color: var(--text-2); }
+
+/* Desktop: the options are listed in full and the page scrolls normally; the preview sticks beside
+   them, filling the screen below the header. The handle on its left edge makes it wider or narrower. */
 @media (min-width: 981px) {
-  .designer-section .e3d-chime-configurator .configurator { --hdr: max(84px, calc(var(--logo-h) + 22px)); height: max(560px, calc(100vh - var(--hdr) - 20px)); align-items: stretch; }
-  .designer-section .e3d-chime-configurator .controls-panel { height: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--cream) transparent; }
-  .designer-section .e3d-chime-configurator .preview-panel { position: relative !important; top: auto; height: 100%; max-height: none; min-height: 0; grid-template-rows: max-content minmax(220px, 1fr) max-content; }
+  .designer-section .e3d-chime-configurator .configurator { --hdr: max(84px, calc(var(--logo-h) + 22px)); grid-template-columns: var(--opts-w, 400px) minmax(0, 1fr) !important; align-items: start; }
+  .designer-section .e3d-chime-configurator .controls-panel { height: auto; overflow: visible; }
+  .designer-section .e3d-chime-configurator .preview-panel { position: sticky !important; top: calc(var(--hdr) + 12px); height: calc(100vh - var(--hdr) - 24px); min-height: 460px; max-height: none; grid-template-rows: max-content minmax(0, 1fr) max-content; }
   .designer-section .e3d-chime-configurator .preview-panel .canvas-wrap { min-height: 0 !important; }
 }
+@media (max-width: 980px) {
+  .designer-section .e3d-chime-configurator .pv-resize { display: none; }
+}
+
+/* Full screen preview (browser full screen, or a fixed overlay where that isn't available) */
+.designer-section .e3d-chime-configurator .preview-panel:fullscreen, .designer-section .e3d-chime-configurator .preview-panel.is-fullscreen { position: fixed !important; inset: 0; z-index: 1000; width: 100%; height: 100% !important; max-height: none !important; min-height: 0; margin: 0; border-radius: 0; border: 0; background: var(--card); grid-template-rows: max-content minmax(0, 1fr) max-content !important; }
+.designer-section .e3d-chime-configurator .preview-panel:fullscreen .canvas-wrap, .designer-section .e3d-chime-configurator .preview-panel.is-fullscreen .canvas-wrap { min-height: 0 !important; height: auto; }
+.designer-section .e3d-chime-configurator .preview-panel:fullscreen .pv-resize, .designer-section .e3d-chime-configurator .preview-panel.is-fullscreen .pv-resize { display: none; }
+html.pv-locked, html.pv-locked body { overflow: hidden; }
 /* The side cutout options are greyed out until a side pattern is chosen; keep that state light. */
 .designer-section .e3d-chime-configurator .side-pattern-card.is-disabled, .designer-section .e3d-chime-configurator #sidePatternControls[aria-disabled="true"] { background: var(--cream-2); }
+
+/* Full screen on phones: keep just the title, price and the essential controls around the 3D view */
+@media (max-width: 760px) {
+  .designer-section .e3d-chime-configurator .preview-panel:fullscreen .preview-toolbar, .designer-section .e3d-chime-configurator .preview-panel.is-fullscreen .preview-toolbar { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between; padding: 10px 14px !important; }
+  .designer-section .e3d-chime-configurator .preview-panel:fullscreen :is(.pv-title strong, .preview-patterns, .price-card > span, .price-card p, .price-details, .light-control, .auto-view-control),
+  .designer-section .e3d-chime-configurator .preview-panel.is-fullscreen :is(.pv-title strong, .preview-patterns, .price-card > span, .price-card p, .price-details, .light-control, .auto-view-control) { display: none !important; }
+  .designer-section .e3d-chime-configurator .preview-panel:fullscreen .price-card, .designer-section .e3d-chime-configurator .preview-panel.is-fullscreen .price-card { width: auto !important; min-width: 0; padding: 6px 12px; }
+  .designer-section .e3d-chime-configurator .preview-panel:fullscreen .preview-meta, .designer-section .e3d-chime-configurator .preview-panel.is-fullscreen .preview-meta { padding: 8px 14px !important; }
+  .designer-section .e3d-chime-configurator .canvas-wrap .viewer-help-strip { font-size: 11px; }
+}
+@media (max-width: 760px) {
+  .designer-section .e3d-chime-configurator .preview-toolbar { grid-template-columns: 1fr !important; }
+  .designer-section .e3d-chime-configurator .preview-toolbar > .price-card { grid-column: 1 !important; grid-row: auto; width: 100%; }
+  .designer-section .e3d-chime-configurator .preview-toolbar .preview-patterns { grid-row: auto; }
+}
