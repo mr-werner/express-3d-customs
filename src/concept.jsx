@@ -10,11 +10,45 @@ export const STUDIO_PHONE = "+17205156647";
 export const STUDIO_EMAIL = "hello@blueprintwebstudio.com";
 export const STUDIO_WEBSITE = "https://blueprintwebstudio.com";
 export const CLIENT_PORTAL = "https://www.blueprintwebstudio.com/portal";
+const SITE_EDITOR = `${CLIENT_PORTAL}/editor/`;
+
+// Opens the portal editor on the page the client is looking at (it asks them to sign in first if needed)
+function openEditor() {
+  const page = window.location.pathname.replace(/^\/+|\/+$/g, "").toLowerCase();
+  const url = /^[a-z0-9-]{1,40}$/.test(page) ? `${SITE_EDITOR}?page=${page}` : SITE_EDITOR;
+  window.open(url, "_blank", "noopener");
+}
 
 let COMPANY = "";
 let STUDIO_SOURCE = "";
 
 const DRAFT_KEY = "e3d-feedback-draft";
+const SIZE_KEY = "e3d-feedback-size";
+const MIN_W = 280;
+const MIN_H = 240;
+
+function readSize() {
+  try {
+    const size = JSON.parse(window.localStorage.getItem(SIZE_KEY) || "null");
+    return size && Number.isFinite(size.w) && Number.isFinite(size.h) ? size : null;
+  } catch { return null; }
+}
+
+function saveSize(size) {
+  try {
+    if (size) window.localStorage.setItem(SIZE_KEY, JSON.stringify(size));
+    else window.localStorage.removeItem(SIZE_KEY);
+  } catch {
+    // The size still applies for this visit
+  }
+}
+
+// Keeps a chosen size inside the window, leaving room for the preview card below
+function fitSize({ w, h }) {
+  const maxW = Math.max(MIN_W, window.innerWidth - 24);
+  const maxH = Math.max(MIN_H, window.innerHeight - 110);
+  return { w: Math.round(Math.min(Math.max(w, MIN_W), maxW)), h: Math.round(Math.min(Math.max(h, MIN_H), maxH)) };
+}
 
 function readDraft() {
   try { return window.localStorage.getItem(DRAFT_KEY) || ""; } catch { return ""; }
@@ -36,10 +70,56 @@ function FeedbackPanel({ draft, onDraft, minimized, onMinimize, onClose }) {
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const textRef = useRef(null);
+  const panelRef = useRef(null);
+  const [size, setSize] = useState(readSize);
 
   useEffect(() => {
     if (!minimized && status !== "sent") textRef.current?.focus();
   }, [minimized, status]);
+
+  // A saved size is re-fitted when the window shrinks
+  useEffect(() => {
+    const onResize = () => setSize((current) => (current ? fitSize(current) : current));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // The panel is anchored bottom-right, so dragging the top-left grip up and left makes it bigger
+  function startResize(event) {
+    event.preventDefault();
+    const box = panelRef.current.getBoundingClientRect();
+    const start = { x: event.clientX, y: event.clientY, w: box.width, h: box.height };
+    let latest = null;
+    const onMove = (e) => {
+      latest = fitSize({ w: start.w + start.x - e.clientX, h: start.h + start.y - e.clientY });
+      setSize(latest);
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      document.body.classList.remove("is-resizing-notes");
+      if (latest) saveSize(latest);
+    };
+    document.body.classList.add("is-resizing-notes");
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
+  function resizeByKey(event) {
+    const steps = { ArrowLeft: [20, 0], ArrowRight: [-20, 0], ArrowUp: [0, 20], ArrowDown: [0, -20] };
+    const step = steps[event.key];
+    if (!step) return;
+    event.preventDefault();
+    const box = panelRef.current.getBoundingClientRect();
+    const next = fitSize({ w: box.width + step[0], h: box.height + step[1] });
+    setSize(next);
+    saveSize(next);
+  }
+
+  function resetSize() {
+    setSize(null);
+    saveSize(null);
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -71,7 +151,23 @@ function FeedbackPanel({ draft, onDraft, minimized, onMinimize, onClose }) {
   }
 
   return (
-    <section className={`feedback-panel${minimized ? " is-minimized" : ""}`} aria-labelledby="feedback-title">
+    <section
+      ref={panelRef}
+      className={`feedback-panel${minimized ? " is-minimized" : ""}${size ? " is-sized" : ""}`}
+      style={size && !minimized ? { width: size.w, height: size.h } : size ? { width: size.w } : undefined}
+      aria-labelledby="feedback-title"
+    >
+      {!minimized && (
+        <button
+          type="button"
+          className="feedback-panel-grip"
+          onPointerDown={startResize}
+          onKeyDown={resizeByKey}
+          onDoubleClick={resetSize}
+          aria-label="Resize notes: drag, or use the arrow keys. Double-click to reset."
+          title="Drag to resize · double-click to reset"
+        />
+      )}
       <div className="feedback-panel-head">
         <button type="button" className="feedback-panel-title" id="feedback-title" onClick={() => onMinimize(!minimized)} aria-expanded={!minimized}>
           Your notes{minimized && draft.trim() ? <span className="feedback-panel-saved"> · draft saved</span> : null}
@@ -151,8 +247,9 @@ export function ConceptWidget({ company, abbr }) {
           <div className="concept-widget-body">
             <h2>Your new site, in progress</h2>
             <span className="concept-widget-label">PREPARED FOR {company.toUpperCase()}</span>
-            <p>Click around, try the designer, and tell us what to change.</p>
+            <p>Click around, try the designer, and tell us what to change, or make small edits yourself.</p>
             <button type="button" className="concept-widget-cta" onClick={openForm}>{draft.trim() ? "Continue your notes" : "Send Feedback"} <ArrowUpRight size={18} /></button>
+            <button type="button" className="concept-widget-edit" onClick={openEditor}>Edit this page yourself</button>
             <div className="concept-widget-links">
               {STUDIO_PHONE && <a href={`tel:${STUDIO_PHONE}`}>Call</a>}
               <a href={`mailto:${STUDIO_EMAIL}`}>Email</a>
