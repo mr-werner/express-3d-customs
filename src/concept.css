@@ -1,6 +1,7 @@
 /* Blueprint WebStudio concept widget + interest modal. Shared; colors come from the variables listed in README-BUILD.md. */
 /* ------------------------------------------------------------ Concept widget (Blueprint WebStudio) */
-.concept-dock { position: fixed; bottom: 12px; right: 12px; width: min(330px, calc(100vw - 24px)); z-index: 100; display: flex; flex-direction: column; gap: 8px; max-height: calc(100vh - 24px); }
+.concept-dock { position: fixed; bottom: 12px; right: 12px; z-index: 100; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-height: calc(100vh - 24px); }
+.concept-dock > * { width: min(330px, calc(100vw - 24px)); }
 .concept-widget { position: relative; flex: 0 0 auto; background: var(--deep); color: #fff; border: 1px solid var(--deep-line); box-shadow: 0 20px 65px rgba(0, 0, 0, .4); font-family: var(--body); }
 .concept-widget-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; color: var(--accent-soft); font-size: 9px; font-weight: 700; letter-spacing: .15em; }
 .concept-widget-head button { background: none; border: 0; color: var(--accent-soft); display: grid; place-items: center; padding: 4px; }
@@ -54,7 +55,7 @@
 }
 
 /* Notes panel, docked above the preview card so the site stays usable */
-.feedback-panel { display: flex; flex-direction: column; min-height: 0; background: var(--paper); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 20px 65px rgba(0, 0, 0, .35); font-family: var(--body); }
+.feedback-panel { position: relative; max-width: calc(100vw - 24px); display: flex; flex-direction: column; min-height: 0; background: var(--paper); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 20px 65px rgba(0, 0, 0, .35); font-family: var(--body); }
 .feedback-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 6px 6px 14px; border-bottom: 1px solid var(--line); }
 .feedback-panel.is-minimized .feedback-panel-head { border-bottom: 0; }
 .feedback-panel-title { flex: 1; text-align: left; background: none; border: 0; padding: 6px 0; color: var(--steel); font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
@@ -74,3 +75,11 @@
 .feedback-panel-sent svg { color: var(--accent); }
 .feedback-panel-sent p { margin: 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
 .feedback-panel-sent strong { color: var(--ink); }
+/* Resizing: a grip in the top-left corner; a sized panel's notes box fills the space */
+.feedback-panel-grip { position: absolute; top: -1px; left: -1px; z-index: 1; width: 18px; height: 18px; padding: 0; border: 0; background: linear-gradient(135deg, var(--steel) 0 2px, transparent 2px 5px, var(--steel) 5px 6px, transparent 6px 9px, var(--steel) 9px 10px, transparent 10px); opacity: .55; cursor: nwse-resize; touch-action: none; }
+.feedback-panel-grip:hover, .feedback-panel-grip:focus-visible { opacity: 1; }
+.feedback-panel.is-sized:not(.is-minimized) .feedback-panel-body { flex: 1; }
+.feedback-panel.is-sized textarea { flex: 1; min-height: 80px; max-height: none; resize: none; }
+body.is-resizing-notes { cursor: nwse-resize; user-select: none; }
+body.is-resizing-notes iframe { pointer-events: none; }
+@media (max-width: 640px) { .feedback-panel-grip { display: none; } }
