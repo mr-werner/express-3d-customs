@@ -64,7 +64,7 @@ export function applyToDesigner({ pattern, color }) {
   }
   // On phones jump straight to the 3D view; on desktop show the whole designer.
   const narrow = window.matchMedia("(max-width: 980px)").matches;
-  const target = narrow ? document.querySelector("#coverPreview") : document.querySelector("#designer");
+  const target = narrow ? document.querySelector("#coverPreview") : document.querySelector("#designer .configurator") || document.querySelector("#designer");
   target?.scrollIntoView({ behavior: "smooth", block: narrow ? "center" : "start" });
 }
 

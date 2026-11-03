@@ -334,16 +334,14 @@ main.subpage > .section:first-child { padding-top: calc(var(--section-pad) * .6)
 .footer .footer-studio-brand strong { color: var(--text); }
 .footer .footer-studio-brand:hover strong { color: var(--red-deep); }
 
-/* Desktop: the preview panel's text rows always keep their full height (they were being squeezed
-   under the canvas). On tall screens the panel stays in view below the sticky header and the canvas
-   takes the height left over; on shorter screens it scrolls with the page at a fixed canvas height. */
+/* Desktop: the designer fills one screen below the sticky header. The options column scrolls on its
+   own, so the 3D viewer beside it stays in view while options are changed. The viewer's text rows keep
+   their full height and the canvas takes the rest. */
 @media (min-width: 981px) {
-  .designer-section .e3d-chime-configurator .preview-panel { grid-template-rows: max-content 460px max-content; }
-  .designer-section .e3d-chime-configurator .preview-panel { position: relative !important; top: auto; max-height: none; }
+  .designer-section .e3d-chime-configurator .configurator { --hdr: max(84px, calc(var(--logo-h) + 22px)); height: max(560px, calc(100vh - var(--hdr) - 20px)); align-items: stretch; }
+  .designer-section .e3d-chime-configurator .controls-panel { height: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--cream) transparent; }
+  .designer-section .e3d-chime-configurator .preview-panel { position: relative !important; top: auto; height: 100%; max-height: none; min-height: 0; grid-template-rows: max-content minmax(220px, 1fr) max-content; }
   .designer-section .e3d-chime-configurator .preview-panel .canvas-wrap { min-height: 0 !important; }
-}
-@media (min-width: 981px) and (min-height: 940px) {
-  .designer-section .e3d-chime-configurator .preview-panel { position: sticky !important; top: calc(max(84px, calc(var(--logo-h) + 22px)) + 12px); max-height: calc(100vh - max(84px, calc(var(--logo-h) + 22px)) - 24px); grid-template-rows: max-content minmax(300px, 1fr) max-content; }
 }
 /* The side cutout options are greyed out until a side pattern is chosen; keep that state light. */
 .designer-section .e3d-chime-configurator .side-pattern-card.is-disabled, .designer-section .e3d-chime-configurator #sidePatternControls[aria-disabled="true"] { background: var(--cream-2); }
