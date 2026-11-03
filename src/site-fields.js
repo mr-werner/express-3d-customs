@@ -2,7 +2,7 @@ import wordmark from "./assets/e3c-wordmark-light.png";
 import crest from "./assets/e3c-crest-light.png";
 import lifestyle from "./assets/shop/chime-lifestyle.jpg";
 import dualTone from "./assets/shop/dual-tone-arches.jpg";
-import archesWhite from "./assets/shop/arches-white.jpg";
+import ownersPlaceholder from "./assets/owners-placeholder.svg";
 import combos from "./assets/shop/combos-dark.jpg";
 import kef from "./assets/shop/kef-grille.jpg";
 import ornithopter from "./assets/shop/dune-ornithopter.jpg";
@@ -172,7 +172,7 @@ export const FIELDS = [
     { text: "Every design reviewed before it prints" },
     { text: "Small family business, Etsy Star Seller" },
   ], 8),
-  image("img.about", G.about, "Photo (a photo of the two of you works great here)", archesWhite, { optional: true }),
+  image("img.about", G.about, "Photo (a photo of the two of you works great here)", ownersPlaceholder, { optional: true }),
 
   text("faq.eyebrow", G.faq, "Small label", "FAQ"),
   text("faq.title", G.faq, "Heading", "Fit and finish questions."),
