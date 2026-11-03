@@ -214,6 +214,29 @@ main.subpage > .section:first-child { padding-top: calc(var(--section-pad) * .6)
 .review figcaption { font-size: 14px; color: var(--text-2); }
 .reviews-more { margin: 14px 0 0; }
 .reviews-source { font-size: 14px; color: var(--text-2); margin-top: 10px; }
+/* Reviews page: search, topic chips, paging and a photo viewer. A row grid, so sorted reviews read left to right */
+.review-grid.review-grid-all { columns: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; align-items: start; }
+.review-grid-all .review { margin: 0; }
+.review-tools { display: flex; gap: 12px; margin: 8px 0 14px; }
+.review-search { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; color: var(--text-2); }
+.review-search:focus-within { border-color: var(--line-strong); }
+.review-search input { flex: 1; min-width: 0; border: 0; background: none; padding: 13px 0; font: inherit; font-size: 15px; color: var(--text); outline: none; }
+.review-tools select { padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 14px; color: var(--text); }
+.review-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.review-chips button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 15px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font: inherit; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; }
+.review-chips button:hover { border-color: var(--line-strong); }
+.review-chips button.is-on { background: var(--char); border-color: var(--char); color: #fff; }
+.review-count { display: flex; align-items: center; gap: 12px; margin: 0 0 18px; font-size: 14px; color: var(--text-2); }
+.review-clear { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--red-deep); text-decoration: underline; cursor: pointer; }
+.review-empty { padding: 40px 0; text-align: center; color: var(--text-2); }
+.review-photo { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.review-viewer { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: 24px; background: rgba(20, 17, 15, .82); }
+.review-viewer figure { position: relative; margin: 0; max-width: min(900px, 100%); max-height: 100%; display: flex; flex-direction: column; background: var(--card); border-radius: var(--r); overflow: hidden; }
+.review-viewer img { display: block; max-width: 100%; max-height: 72vh; object-fit: contain; background: #000; }
+.review-viewer figcaption { padding: 16px 20px; font-family: var(--head); font-size: 18px; line-height: 1.45; }
+.review-viewer-by { display: block; margin-top: 6px; font-family: var(--body); font-size: 14px; color: var(--text-2); }
+.review-viewer-close { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .92); color: var(--text); cursor: pointer; }
+@media (max-width: 640px) { .review-tools { flex-direction: column; } .review-tools select { padding: 11px 16px; } }
 .reviews-source a { display: inline-flex; align-items: center; gap: 4px; color: var(--red-deep); font-weight: 600; }
 
 /* Other products */

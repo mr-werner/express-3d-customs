@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, ArrowUpRight, Box, Check, ChevronDown, Layers, Menu, Palette, Ruler, ShoppingBag, Sparkles, Star, X } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Box, Camera, Check, ChevronDown, Layers, Menu, Palette, Ruler, Search, ShoppingBag, Sparkles, Star, X } from "lucide-react";
 import Designer, { applyToDesigner } from "./Designer.jsx";
 import { CLIENT_PORTAL, ConceptWidget, StudioCredit } from "./concept.jsx";
 import { EDIT_MODE, HOME_ID, T, ed, usePages, useSite } from "./editable.jsx";
@@ -65,10 +65,11 @@ function Rating({ size = 15, value = 5 }) {
   );
 }
 
-function ReviewCard({ r }) {
+function ReviewCard({ r, onPhoto }) {
+  const img = r.photo && <img src={r.photo} alt={`Photo from ${r.name}'s review`} loading="lazy" width="300" height="300" />;
   return (
     <figure className={`review${r.photo ? " has-photo" : ""}`}>
-      {r.photo && <img src={r.photo} alt={`Photo from ${r.name}'s review`} loading="lazy" width="300" height="300" />}
+      {img && (onPhoto ? <button type="button" className="review-photo" onClick={onPhoto} aria-label="View photo full size">{img}</button> : img)}
       <Rating size={14} value={r.rating || 5} />
       <blockquote>"{r.text}"</blockquote>
       <figcaption><strong>{r.name || "Etsy buyer"}</strong> · {r.date} · on Etsy</figcaption>
@@ -330,9 +331,54 @@ function Reviews() {
   );
 }
 
+// Topic chips on the reviews page; each one shows when at least one review mentions it
+const REVIEW_TOPICS = [
+  ["Fit", /\b(fit|fits|fitted|size|sized|measure|measurements?|custom sizes?)\b/i],
+  ["Looks", /\b(look|looks|beautiful|pretty|gorgeous|cute|ugly|touch|style|design)\b/i],
+  ["Colors", /\b(colou?rs?|gold|silver|copper|black|white|blue|green|red)\b/i],
+  ["Quality", /\b(quality|sturdy|well made|holds?|durable|solid)\b/i],
+  ["Easy install", /\b(easy|install|installed|put on|snap)\b/i],
+  ["Gift", /\b(gift|present|mom|dad|husband|wife|friend)\b/i],
+  ["Shipping", /\b(ship|shipped|shipping|arrived|fast|quick|quickly|packag)/i],
+];
+const REVIEWS_PER_PAGE = 9;
+
+function reviewTime(r) {
+  const time = Date.parse(r.date);
+  return Number.isNaN(time) ? 0 : time;
+}
+
 function ReviewsAll() {
   const c = useSite();
   const reviews = useEtsyReviews();
+  const [query, setQuery] = useState("");
+  const [topic, setTopic] = useState("");
+  const [photosOnly, setPhotosOnly] = useState(false);
+  const [order, setOrder] = useState("newest");
+  const [shown, setShown] = useState(REVIEWS_PER_PAGE);
+  const [viewing, setViewing] = useState(null);
+
+  const topics = REVIEW_TOPICS.filter(([, test]) => reviews.some((r) => test.test(r.text)));
+  const hasPhotos = reviews.some((r) => r.photo);
+  const words = query.trim().toLowerCase();
+  const topicTest = REVIEW_TOPICS.find(([label]) => label === topic)?.[1];
+  const matches = reviews
+    .filter((r) => (!words || r.text.toLowerCase().includes(words)) && (!topicTest || topicTest.test(r.text)) && (!photosOnly || r.photo))
+    .sort((a, b) => (order === "newest" ? reviewTime(b) - reviewTime(a) : reviewTime(a) - reviewTime(b)));
+  const visible = matches.slice(0, shown);
+  const filtered = words || topic || photosOnly;
+
+  // Any change to the filters starts the list over at the first page
+  const refine = (set) => (value) => { set(value); setShown(REVIEWS_PER_PAGE); };
+  const clear = () => { setQuery(""); setTopic(""); setPhotosOnly(false); setShown(REVIEWS_PER_PAGE); };
+
+  useEffect(() => {
+    if (!viewing) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") setViewing(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewing]);
+
   return (
     <section className="section reviews reviews-all" id="reviewsAll" aria-labelledby="reviews-all-title" {...ed("section:reviewsAll")}>
       <div className="wrap">
@@ -346,14 +392,56 @@ function ReviewsAll() {
             <strong>4.9</strong><Rating /><span>{c("reviews.badge")}</span><ArrowUpRight size={16} />
           </a>
         </div>
-        <div className="review-grid review-grid-all">
-          {reviews.map((r, i) => <ReviewCard key={i} r={r} />)}
+
+        <div className="review-tools">
+          <label className="review-search">
+            <Search size={17} aria-hidden="true" />
+            <input type="search" value={query} onChange={(e) => refine(setQuery)(e.target.value)} placeholder="Search reviews, e.g. felt, fit, gift" aria-label="Search reviews" />
+          </label>
+          <select value={order} onChange={(e) => setOrder(e.target.value)} aria-label="Sort reviews">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+          </select>
         </div>
+        <div className="review-chips" role="group" aria-label="Filter reviews">
+          <button type="button" className={!topic && !photosOnly ? "is-on" : ""} aria-pressed={!topic && !photosOnly} onClick={() => { refine(setTopic)(""); setPhotosOnly(false); }}>All</button>
+          {topics.map(([label]) => (
+            <button key={label} type="button" className={topic === label ? "is-on" : ""} aria-pressed={topic === label} onClick={() => refine(setTopic)(topic === label ? "" : label)}>{label}</button>
+          ))}
+          {hasPhotos && (
+            <button type="button" className={photosOnly ? "is-on" : ""} aria-pressed={photosOnly} onClick={() => refine(setPhotosOnly)(!photosOnly)}><Camera size={15} aria-hidden="true" /> With photos</button>
+          )}
+        </div>
+        <p className="review-count" aria-live="polite">
+          {matches.length === reviews.length ? `${reviews.length} reviews` : `${matches.length} of ${reviews.length} reviews`}
+          {filtered && <button type="button" className="review-clear" onClick={clear}>Clear filters</button>}
+        </p>
+
+        {visible.length ? (
+          <div className="review-grid review-grid-all">
+            {visible.map((r, i) => <ReviewCard key={`${r.date}-${i}`} r={r} onPhoto={() => setViewing(r)} />)}
+          </div>
+        ) : (
+          <p className="review-empty">No reviews match that yet. <button type="button" className="review-clear" onClick={clear}>Show all reviews</button></p>
+        )}
+        {matches.length > shown && (
+          <p className="reviews-more"><button type="button" className="btn btn-dark" onClick={() => setShown(shown + REVIEWS_PER_PAGE)}>Show more reviews <ChevronDown size={17} /></button></p>
+        )}
         <p className="reviews-source">
           Quoted word for word from the {c("company")} shop reviews on Etsy.{" "}
           <a href={c("link.reviews")} target="_blank" rel="noopener noreferrer">See all reviews on Etsy <ArrowUpRight size={14} /></a>
         </p>
       </div>
+
+      {viewing && (
+        <div className="review-viewer" role="dialog" aria-modal="true" aria-label={`Photo from ${viewing.name || "an Etsy buyer"}'s review`} onClick={() => setViewing(null)}>
+          <figure onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="review-viewer-close" onClick={() => setViewing(null)} aria-label="Close photo" autoFocus><X size={22} /></button>
+            <img src={viewing.photo} alt={`Photo from ${viewing.name || "an Etsy buyer"}'s review`} />
+            <figcaption><Rating size={14} value={viewing.rating || 5} /> "{viewing.text}" <span className="review-viewer-by">{viewing.name || "Etsy buyer"} · {viewing.date}</span></figcaption>
+          </figure>
+        </div>
+      )}
     </section>
   );
 }

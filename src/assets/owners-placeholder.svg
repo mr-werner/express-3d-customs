@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4eee5"/>
+      <stop offset="1" stop-color="#ece2d3"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#bg)"/>
+  <rect x="40" y="40" width="720" height="920" rx="28" fill="none" stroke="#2e2a26" stroke-opacity=".18" stroke-width="3" stroke-dasharray="14 12"/>
+  <g fill="#b5583c" fill-opacity=".22">
+    <circle cx="318" cy="330" r="74"/>
+    <path d="M178 560c0-86 63-150 140-150s140 64 140 150v20H178z"/>
+    <circle cx="482" cy="350" r="66"/>
+    <path d="M362 580c0-78 54-136 120-136s120 58 120 136v18H362z"/>
+  </g>
+  <text x="400" y="690" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="46" fill="#2e2a26">Mike &amp; Bekah</text>
+  <text x="400" y="740" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="24" letter-spacing="4" fill="#6e6a64">PHOTO COMING SOON</text>
+</svg>

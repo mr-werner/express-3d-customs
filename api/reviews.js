@@ -10,7 +10,7 @@
 const SHOP_NAME = "Express3DCustoms";
 const API = "https://openapi.etsy.com/v3/application";
 const MONTH = 60 * 60 * 24 * 30;
-const MAX_REVIEWS = 24;
+const MAX_REVIEWS = 100;
 
 function etsyKey() {
   const key = process.env.ETSY_API_KEY;
